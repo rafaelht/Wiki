@@ -105,7 +105,7 @@ export function AboutPage() {
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <a
-              href="https://github.com"
+              href="https://github.com/rafaelht/Wiki"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center space-x-2 px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
@@ -115,7 +115,7 @@ export function AboutPage() {
               <ExternalLink size={14} />
             </a>
             <a
-              href="http://localhost:8000/docs"
+              href="http://localhost:8001/docs"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -318,7 +318,7 @@ export function AboutPage() {
         
         <div className="grid md:grid-cols-2 gap-4">
           <a
-            href="http://localhost:8000"
+            href="http://localhost:8001"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
@@ -331,7 +331,7 @@ export function AboutPage() {
           </a>
           
           <a
-            href="http://localhost:8000/docs"
+            href="http://localhost:8001/docs"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
@@ -357,7 +357,7 @@ export function AboutPage() {
           </a>
           
           <a
-            href="https://github.com"
+            href="https://github.com/rafaelht/Wiki"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"

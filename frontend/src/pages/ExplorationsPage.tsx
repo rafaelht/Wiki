@@ -11,6 +11,7 @@ import { api } from '../services/api';
 import { SavedExploration, ExplorationFilters } from '../types';
 import { useNavigate } from 'react-router-dom';
 import { DeleteConfirmationModal } from '../components/DeleteConfirmationModal';
+import { useAuthStore } from '../store/authStore';
 
 export function ExplorationsPage() {
   const [explorations, setExplorations] = useState<SavedExploration[]>([]);
@@ -21,6 +22,17 @@ export function ExplorationsPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [explorationToDelete, setExplorationToDelete] = useState<SavedExploration | null>(null);
   const navigate = useNavigate();
+  
+  // Verificar autenticación
+  const { isAuthenticated, isGuest } = useAuthStore();
+  
+  // Redirigir si es invitado o no autenticado
+  useEffect(() => {
+    if (!isAuthenticated || isGuest) {
+      navigate('/login');
+      return;
+    }
+  }, [isAuthenticated, isGuest, navigate]);
 
   const loadExplorations = async () => {
     try {
@@ -103,6 +115,24 @@ export function ExplorationsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Verificar acceso */}
+      {(!isAuthenticated || isGuest) ? (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            Acceso Restringido
+          </h2>
+          <p className="text-gray-600 mb-4">
+            Necesitas iniciar sesión con una cuenta registrada para ver tus exploraciones guardadas.
+          </p>
+          <button
+            onClick={() => navigate('/login')}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Iniciar Sesión
+          </button>
+        </div>
+      ) : (
+        <>
       {/* Header */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -286,6 +316,8 @@ export function ExplorationsPage() {
         onCancel={cancelDelete}
         exploration={explorationToDelete}
       />
+        </>
+      )}
     </div>
   );
 }

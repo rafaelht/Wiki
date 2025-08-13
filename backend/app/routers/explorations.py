@@ -138,6 +138,7 @@ async def list_explorations(
     search: Optional[str] = Query(None, description="Búsqueda por nombre o descripción"),
     tag: Optional[str] = Query(None, description="Filtrar por etiqueta"),
     root_node: Optional[str] = Query(None, description="Filtrar por nodo raíz"),
+    current_user: UserResponse = Depends(get_current_active_user),
     db: AsyncIOMotorDatabase = Depends(get_database)
 ) -> ExplorationListResponse:
     """
@@ -187,6 +188,9 @@ async def list_explorations(
         
         # Construir filtros de búsqueda
         filters = {}
+        
+        # Filtrar por usuario - solo mostrar exploraciones del usuario autenticado
+        filters["user_id"] = current_user.id
         
         if search:
             # Búsqueda por texto en nombre y descripción
@@ -254,6 +258,7 @@ async def list_explorations(
 @router.get("/explorations/{exploration_id}", response_model=SavedExploration)
 async def get_exploration(
     exploration_id: str = Path(..., description="ID único de la exploración"),
+    current_user: UserResponse = Depends(get_current_active_user),
     db: AsyncIOMotorDatabase = Depends(get_database)
 ) -> SavedExploration:
     """
@@ -317,6 +322,13 @@ async def get_exploration(
                 detail=f"Exploración con ID {exploration_id} no encontrada"
             )
         
+        # Verificar que la exploración pertenece al usuario autenticado
+        if doc.get("user_id") != current_user.id:
+            raise HTTPException(
+                status_code=404,  # 404 en lugar de 403 para no revelar existencia
+                detail=f"Exploración con ID {exploration_id} no encontrada"
+            )
+        
         # Convertir a modelo de respuesta
         exploration = SavedExploration(
             id=str(doc["_id"]),
@@ -344,6 +356,7 @@ async def get_exploration(
 @router.delete("/explorations/{exploration_id}")
 async def delete_exploration(
     exploration_id: str = Path(..., description="ID único de la exploración"),
+    current_user: UserResponse = Depends(get_current_active_user),
     db: AsyncIOMotorDatabase = Depends(get_database)
 ) -> JSONResponse:
     """
@@ -393,6 +406,13 @@ async def delete_exploration(
         if not existing_doc:
             raise HTTPException(
                 status_code=404,
+                detail=f"Exploración con ID {exploration_id} no encontrada"
+            )
+        
+        # Verificar que la exploración pertenece al usuario autenticado
+        if existing_doc.get("user_id") != current_user.id:
+            raise HTTPException(
+                status_code=404,  # 404 en lugar de 403 para no revelar existencia
                 detail=f"Exploración con ID {exploration_id} no encontrada"
             )
         

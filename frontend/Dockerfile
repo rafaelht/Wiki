@@ -20,7 +20,7 @@ COPY public/ ./public/
 COPY index.html ./
 
 # Argumentos de build
-ARG VITE_API_BASE_URL=http://localhost:8000
+ARG VITE_API_BASE_URL=http://localhost:8001
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 
 # Construir la aplicación

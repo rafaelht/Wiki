@@ -3,6 +3,16 @@
   "version": "1.0.0",
   "description": "Frontend para el explorador de grafos de conocimiento de Wikipedia",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rafaelht/Wiki.git"
+  },
+  "homepage": "https://github.com/rafaelht/Wiki",
+  "bugs": {
+    "url": "https://github.com/rafaelht/Wiki/issues"
+  },
+  "author": "Rafael Hilario Torres",
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",

@@ -20,8 +20,8 @@ Esta aplicación full-stack permite a los usuarios explorar cómo los conceptos 
 - ✅ **Manejo de Errores**: Sistema robusto de excepciones
 - ✅ **Testing**: Endpoints probados y validados
 
-**Servidor Backend Activo**: http://localhost:8000
-**API Docs**: http://localhost:8000/docs
+**Servidor Backend Activo**: http://localhost:8001
+**API Docs**: http://localhost:8001/docs
 
 #### Frontend (85% Funcional)
 - ✅ **Arquitectura React**: Configuración moderna con TypeScript y Vite
@@ -299,8 +299,8 @@ cp .env.example .env
 # 6. Iniciar servidor de desarrollo
 python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
-# El backend estará disponible en: http://localhost:8000
-# Documentación API: http://localhost:8000/docs
+# El backend estará disponible en: http://localhost:8001
+# Documentación API: http://localhost:8001/docs
 ```
 
 #### Frontend (React + TypeScript)
@@ -314,7 +314,7 @@ npm install
 # Configurar variables de entorno
 cp .env.example .env.local
 # Editar .env.local:
-# VITE_API_BASE_URL=http://localhost:8000
+# VITE_API_BASE_URL=http://localhost:8001
 
 # Iniciar servidor de desarrollo
 npm run dev
@@ -354,17 +354,17 @@ docker-compose down
 
 ### Verificación de Instalación
 
-1. **Backend**: Visita http://localhost:8000/docs
+1. **Backend**: Visita http://localhost:8001/docs
 2. **Frontend**: Visita http://localhost:3000  
 3. **Test de API**: 
 ```bash
-curl http://localhost:8000/health
+curl http://localhost:8001/health
 # Respuesta esperada: {"message": "Wikipedia Graph Explorer API está funcionando", "status": "healthy", "version": "1.0.0"}
 ```
 
 4. **Test de búsqueda**:
 ```bash
-curl "http://localhost:8000/api/search?term=Albert Einstein&limit=5"
+curl "http://localhost:8001/api/search?term=Albert Einstein&limit=5"
 ```
 
 ## 🎯 Decisiones Arquitectónicas

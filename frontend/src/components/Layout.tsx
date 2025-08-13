@@ -27,13 +27,21 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
+interface NavigationItem {
+  path: string;
+  name: string;
+  icon: React.ComponentType<any>;
+  description: string;
+  requiresAuth?: boolean;
+}
+
 export function Layout({ children }: LayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const location = useLocation();
   const { user, isAuthenticated, logout } = useAuthStore();
 
-  const navigationItems = [
+  const navigationItems: NavigationItem[] = [
     {
       path: '/',
       name: 'Explorador',
@@ -44,7 +52,8 @@ export function Layout({ children }: LayoutProps) {
       path: '/explorations',
       name: 'Exploraciones',
       icon: Save,
-      description: 'Exploraciones guardadas'
+      description: 'Exploraciones guardadas',
+      requiresAuth: true // Requiere autenticación no-invitado
     },
     {
       path: '/about',
@@ -53,6 +62,14 @@ export function Layout({ children }: LayoutProps) {
       description: 'Información del proyecto'
     }
   ];
+
+  // Filtrar elementos según el estado de autenticación
+  const visibleNavigationItems = navigationItems.filter(item => {
+    if (item.requiresAuth && (!isAuthenticated || user?.role === 'guest')) {
+      return false;
+    }
+    return true;
+  });
 
   const isCurrentPath = (path: string) => {
     return location.pathname === path;
@@ -103,7 +120,7 @@ export function Layout({ children }: LayoutProps) {
 
             {/* Navegación desktop */}
             <nav className="hidden md:flex items-center space-x-8">
-              {navigationItems.map((item) => {
+              {visibleNavigationItems.map((item) => {
                 const Icon = item.icon;
                 return (
                   <Link
@@ -172,7 +189,7 @@ export function Layout({ children }: LayoutProps) {
 
               {/* Enlace a GitHub */}
               <a
-                href="https://github.com"
+                href="https://github.com/rafaelht/Wiki"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
@@ -198,7 +215,7 @@ export function Layout({ children }: LayoutProps) {
           <div className="fixed left-0 top-16 bottom-0 w-64 bg-white border-r border-gray-200 z-50 md:hidden overflow-y-auto">
             <div className="flex flex-col h-full">
               <nav className="flex-1 p-4 space-y-2">
-                {navigationItems.map((item) => {
+                {visibleNavigationItems.map((item) => {
                   const Icon = item.icon;
                   return (
                     <Link
@@ -256,7 +273,7 @@ export function Layout({ children }: LayoutProps) {
                   Prueba Técnica
                 </p>
                 <a
-                  href="https://github.com"
+                  href="https://github.com/rafaelht/Wiki"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center space-x-1 text-sm text-primary-600 hover:text-primary-700"
