@@ -16,6 +16,7 @@ export interface GraphNode {
   page_id?: number;
   depth: number;
   centrality?: number;
+  degree?: number;
   image_url?: string;
   color?: string;
   size?: number;
@@ -40,6 +41,30 @@ export interface GraphData {
   max_depth: number;
 }
 
+export interface NetworkOptions {
+  physics?: {
+    enabled: boolean;
+    stabilization: { iterations: number };
+  };
+  layout?: {
+    improvedLayout: boolean;
+  };
+  interaction?: {
+    hover: boolean;
+    tooltipDelay: number;
+  };
+  nodes?: {
+    font: { size: number };
+    borderWidth: number;
+    shadow: boolean;
+  };
+  edges?: {
+    width: number;
+    arrows: { to: { enabled: boolean } };
+    smooth: { type: string };
+  };
+}
+
 export interface GraphVisualizationProps {
   data?: GraphData;
   graphData?: GraphData;
@@ -49,6 +74,7 @@ export interface GraphVisualizationProps {
   width?: number | string;
   showControls?: boolean;
   showStats?: boolean;
+  options?: NetworkOptions;
 }
 
 export interface SavedExploration {
@@ -68,6 +94,63 @@ export interface CreateExplorationRequest {
   root_node: string;
   graph_data: GraphData;
   tags: string[];
+}
+
+// API Response types
+export interface SearchResponse {
+  results: WikipediaArticle[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface ExploreResponse {
+  graph_data: GraphData;
+  message?: string;
+}
+
+export interface ExplorationListResponse {
+  explorations: SavedExploration[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface ExplorationFilters {
+  search?: string;
+  tags?: string[];
+  created_after?: string;
+  created_before?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface PathFindingRequest {
+  start_node: string;
+  end_node: string;
+  max_depth?: number;
+  algorithm?: 'bfs' | 'dfs' | 'dijkstra';
+}
+
+export interface PathFindingResponse {
+  path: GraphNode[];
+  distance: number;
+  algorithm_used: string;
+}
+
+export interface GraphMetrics {
+  total_nodes: number;
+  total_edges: number;
+  average_degree: number;
+  clustering_coefficient: number;
+  diameter: number;
+  density: number;
+}
+
+export interface ErrorResponse {
+  detail: string;
+  error_code?: string;
+  status_code: number;
 }
 
 export interface AppState {

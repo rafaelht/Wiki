@@ -7,7 +7,7 @@
 
 import React from 'react';
 import { GraphNode } from '../types';
-import { ExternalLink, Globe, BookOpen, X, Image } from 'lucide-react';
+import { ExternalLink, Globe, BookOpen, X } from 'lucide-react';
 
 interface ArticlePreviewProps {
   node: GraphNode | null;
@@ -91,7 +91,6 @@ export const ArticlePreview: React.FC<ArticlePreviewProps> = ({
             )}
             <div className="flex items-center space-x-2 text-gray-600">
               <span className="text-green-500">📊</span>
-              <span>Explorado</span>
             </div>
           </div>
         </div>
@@ -99,10 +98,6 @@ export const ArticlePreview: React.FC<ArticlePreviewProps> = ({
         {/* Image Section */}
         {node.image_url && (
           <div className="px-6 py-4 border-b border-gray-100">
-            <h4 className="font-medium text-gray-900 mb-3 flex items-center">
-              <Image className="h-4 w-4 mr-2 text-blue-500" />
-              Imagen
-            </h4>
             <div className="flex justify-center">
               <img
                 src={node.image_url}

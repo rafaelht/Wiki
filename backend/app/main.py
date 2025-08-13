@@ -17,9 +17,10 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Imports locales
-from app.routers import search, explore, explorations
+from app.routers import search, explore, explorations, auth
 from app.database.connection import get_database
 from app.models.responses import HealthResponse
+from app.services.auth_service import auth_service
 
 # Crear instancia de FastAPI
 app = FastAPI(
@@ -45,9 +46,21 @@ app.add_middleware(
 )
 
 # Incluir routers
+app.include_router(auth.router, prefix="/api/auth", tags=["authentication"])
 app.include_router(search.router, prefix="/api", tags=["search"])
 app.include_router(explore.router, prefix="/api", tags=["explore"])
 app.include_router(explorations.router, prefix="/api", tags=["explorations"])
+
+@app.on_event("startup")
+async def startup_event():
+    """
+    Initialize default admin user on startup
+    """
+    try:
+        await auth_service.create_admin_user()
+        logger.info("Application startup completed")
+    except Exception as e:
+        logger.error(f"Error during startup: {str(e)}")
 
 @app.get("/", response_model=HealthResponse)
 async def root():

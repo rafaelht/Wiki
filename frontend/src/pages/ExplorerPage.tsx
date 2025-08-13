@@ -5,27 +5,51 @@
  * incluyendo búsqueda, visualización y panel de detalles.
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
 import { GraphVisualization } from '../components/GraphVisualization';
 import { ArticlePreview } from '../components/ArticlePreview';
+import ErrorBoundary from '../components/ErrorBoundary';
+import SaveExplorationModal from '../components/SaveExplorationModal';
 import { useGraphStore } from '../store/graphStore';
-import { WikipediaArticle, GraphNode } from '../types';
-import { Save, Download, Share2, AlertCircle } from 'lucide-react';
+import { useAuthStore } from '../store/authStore';
+import { WikipediaArticle, GraphNode, SavedExploration } from '../types';
+import { Save, Download, Share2, AlertCircle, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export function ExplorerPage() {
-  const [showSaveModal, setShowSaveModal] = useState(false);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  
+  const location = useLocation();
 
-  // Estado del store
+  // Estado del store de grafos
   const { 
     currentGraph, 
     isLoading, 
     error,
-    exploreFromNode
+    exploreFromNode,
+    saveCurrentExploration,
+    setCurrentGraph
   } = useGraphStore();
+
+  // Estado del store de autenticación
+  const { isAuthenticated, isGuest } = useAuthStore();
+
+  // Cargar exploración guardada si se pasa por la navegación
+  useEffect(() => {
+    const state = location.state as { loadedExploration?: SavedExploration };
+    if (state?.loadedExploration) {
+      const exploration = state.loadedExploration;
+      setCurrentGraph(exploration.graph_data);
+      toast.success(`Exploración "${exploration.name}" cargada exitosamente`);
+      
+      // Limpiar el state para evitar recargas accidentales
+      window.history.replaceState({}, document.title, location.pathname);
+    }
+  }, [location.state, setCurrentGraph]);
 
   // Manejar selección de artículo desde la búsqueda
   const handleArticleSelect = async (article: WikipediaArticle) => {
@@ -33,6 +57,20 @@ export function ExplorerPage() {
       console.log('Exploring article:', article.title);
       await exploreFromNode(article.title, 3, 50); // Aumentada la profundidad a 3
       toast.success(`Explorando "${article.title}"`);
+      
+      // Recordatorio para usuarios invitados
+      if (isGuest) {
+        setTimeout(() => {
+          toast('💡 Tip: Crea una cuenta para guardar tus exploraciones', {
+            duration: 6000,
+            style: {
+              background: '#fef3c7',
+              color: '#92400e',
+              border: '1px solid #fbbf24',
+            },
+          });
+        }, 2000);
+      }
     } catch (error) {
       console.error('Error explorando artículo:', error);
       toast.error('Error al explorar el artículo');
@@ -50,6 +88,26 @@ export function ExplorerPage() {
   const handleClosePreview = () => {
     setShowPreview(false);
     setSelectedNode(null);
+  };
+
+  // Manejar guardado del grafo (solo para usuarios autenticados)
+  const handleSaveGraph = () => {
+    if (isGuest) {
+      toast.error('Debes iniciar sesión para guardar exploraciones');
+      return;
+    }
+    
+    if (!isAuthenticated) {
+      toast.error('Debes estar autenticado para guardar');
+      return;
+    }
+    
+    if (!currentGraph) {
+      toast.error('No hay grafo para guardar');
+      return;
+    }
+    
+    setShowSaveModal(true);
   };
 
   // Manejar exportación del grafo
@@ -114,19 +172,39 @@ export function ExplorerPage() {
           {/* Acciones del header */}
           {currentGraph && (
             <div className="flex items-center space-x-3">
-              <button
-                onClick={() => setShowSaveModal(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2 transition-colors"
-                disabled={isLoading}
-              >
-                <Save size={16} />
-                <span>Guardar</span>
-              </button>
+              {/* Botón de guardar - Solo para usuarios autenticados */}
+              {isAuthenticated && !isGuest ? (
+                <button
+                  onClick={handleSaveGraph}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2 transition-colors"
+                  disabled={isLoading}
+                  title="Guardar esta exploración en tu cuenta"
+                >
+                  <Save size={16} />
+                  <span>Guardar</span>
+                </button>
+              ) : (
+                <div className="relative group">
+                  <button
+                    onClick={() => toast.error('Inicia sesión para guardar exploraciones')}
+                    className="px-4 py-2 bg-gray-400 text-white rounded-lg cursor-not-allowed flex items-center space-x-2"
+                    disabled
+                  >
+                    <Lock size={16} />
+                    <span>Guardar</span>
+                  </button>
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                    Inicia sesión para guardar exploraciones
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                  </div>
+                </div>
+              )}
               
               <button
                 onClick={handleExportGraph}
                 className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center space-x-2 transition-colors"
                 disabled={isLoading}
+                title="Descargar el grafo como archivo JSON"
               >
                 <Download size={16} />
                 <span>Exportar</span>
@@ -136,6 +214,7 @@ export function ExplorerPage() {
                 onClick={handleShareGraph}
                 className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center space-x-2 transition-colors"
                 disabled={isLoading}
+                title="Compartir enlace de esta página"
               >
                 <Share2 size={16} />
                 <span>Compartir</span>
@@ -147,6 +226,30 @@ export function ExplorerPage() {
 
       {/* Barra de búsqueda */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        {/* Mensaje informativo para usuarios invitados */}
+        {isGuest && (
+          <div className="mb-4 bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <div className="flex items-start space-x-3">
+              <div className="flex-shrink-0">
+                <div className="w-6 h-6 bg-amber-100 rounded-full flex items-center justify-center">
+                  <span className="text-amber-600 text-sm">💡</span>
+                </div>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-medium text-amber-800 mb-1">
+                  Modo Invitado
+                </h3>
+                <p className="text-sm text-amber-700">
+                  Estás navegando como invitado. Puedes explorar y exportar grafos, pero no guardarlos. 
+                  <a href="/register" className="font-medium underline hover:text-amber-900 ml-1">
+                    Créate una cuenta
+                  </a> para guardar tus exploraciones.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <SearchBar
           onArticleSelect={handleArticleSelect}
           placeholder="Buscar artículo de Wikipedia para comenzar la exploración..."
@@ -192,21 +295,32 @@ export function ExplorerPage() {
               <span>🔗 {currentGraph.total_edges} conexiones</span>
               <span>📈 Profundidad: {currentGraph.max_depth}</span>
             </div>
+            
+            {/* Mostrar información de exploración cargada */}
+            {location.state?.loadedExploration && (
+              <div className="mt-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg inline-block">
+                <span className="text-blue-800 text-sm font-medium">
+                  📁 Exploración cargada: {(location.state as any).loadedExploration.name}
+                </span>
+              </div>
+            )}
           </div>
           
           {/* Main Content: Graph + Preview Panel */}
           <div className="flex h-[700px]">
             {/* Graph Visualization */}
             <div className={`transition-all duration-300 ${showPreview ? 'w-2/3' : 'w-full'}`}>
-              <GraphVisualization
-                data={currentGraph}
-                graphData={currentGraph}
-                height="700px"
-                width="100%"
-                onNodeClick={handleNodeClick}
-                showControls={true}
-                showStats={true}
-              />
+              <ErrorBoundary>
+                <GraphVisualization
+                  data={currentGraph}
+                  graphData={currentGraph}
+                  height="700px"
+                  width="100%"
+                  onNodeClick={handleNodeClick}
+                  showControls={true}
+                  showStats={true}
+                />
+              </ErrorBoundary>
             </div>
             
             {/* Article Preview Panel */}
@@ -361,6 +475,16 @@ export function ExplorerPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal para guardar exploración */}
+      {showSaveModal && (
+        <SaveExplorationModal
+          currentGraph={currentGraph}
+          onSave={saveCurrentExploration}
+          onClose={() => setShowSaveModal(false)}
+          isLoading={isLoading}
+        />
       )}
     </div>
   );

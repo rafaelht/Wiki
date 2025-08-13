@@ -22,6 +22,21 @@ import {
   ErrorResponse
 } from '../types';
 
+// Función para obtener el token del store de Zustand
+const getAuthToken = (): string | null => {
+  try {
+    // Acceder al store de Zustand directamente
+    const authData = localStorage.getItem('auth-storage');
+    if (authData) {
+      const parsed = JSON.parse(authData);
+      return parsed.state?.token || null;
+    }
+  } catch (error) {
+    console.error('Error getting auth token:', error);
+  }
+  return null;
+};
+
 // Configuración base de la API
 const API_BASE_URL = (import.meta as any).env.VITE_API_BASE_URL || 'http://127.0.0.1:8001';
 const API_TIMEOUT = 90000; // 90 segundos - Aumentado para exploraciones complejas
@@ -46,6 +61,12 @@ class ApiClient {
     // Request interceptor
     this.client.interceptors.request.use(
       (config) => {
+        // Agregar token de autorización si está disponible
+        const token = getAuthToken();
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        
         // Agregar timestamp para evitar cache en desarrollo
         if ((import.meta as any).env.DEV) {
           config.params = {
@@ -55,6 +76,9 @@ class ApiClient {
         }
         
         console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`);
+        if (token) {
+          console.log(`🔑 Auth token included: ${token.substring(0, 20)}...`);
+        }
         return config;
       },
       (error) => {
@@ -87,6 +111,19 @@ class ApiClient {
       switch (status) {
         case 400:
           toast.error(`Solicitud inválida: ${message}`);
+          break;
+        case 401:
+          toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+          // Limpiar token inválido
+          try {
+            localStorage.removeItem('auth-storage');
+            // Recargar la página para forzar re-autenticación
+            setTimeout(() => {
+              window.location.href = '/login';
+            }, 1500);
+          } catch (e) {
+            console.error('Error clearing auth storage:', e);
+          }
           break;
         case 404:
           toast.error('Recurso no encontrado');

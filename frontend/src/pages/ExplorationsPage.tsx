@@ -5,74 +5,90 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Save, Calendar, Trash2, Eye, Plus } from 'lucide-react';
+import { Save, Calendar, Trash2, Eye, Plus, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
-
-interface SavedExploration {
-  id: string;
-  name: string;
-  description?: string;
-  startNode: string;
-  nodeCount: number;
-  edgeCount: number;
-  createdAt: string;
-  lastModified: string;
-}
+import { api } from '../services/api';
+import { SavedExploration, ExplorationFilters } from '../types';
+import { useNavigate } from 'react-router-dom';
+import { DeleteConfirmationModal } from '../components/DeleteConfirmationModal';
 
 export function ExplorationsPage() {
   const [explorations, setExplorations] = useState<SavedExploration[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(1);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [explorationToDelete, setExplorationToDelete] = useState<SavedExploration | null>(null);
+  const navigate = useNavigate();
 
-  // Simulated data for now
-  useEffect(() => {
-    // This would normally fetch from API
-    const mockExplorations: SavedExploration[] = [
-      {
-        id: '1',
-        name: 'Exploración de Albert Einstein',
-        description: 'Conexiones desde física hasta filosofía',
-        startNode: 'Albert Einstein',
-        nodeCount: 45,
-        edgeCount: 128,
-        createdAt: '2024-01-15T10:30:00Z',
-        lastModified: '2024-01-15T10:30:00Z'
-      },
-      {
-        id: '2',
-        name: 'Inteligencia Artificial y Machine Learning',
-        description: 'Red de conceptos de IA moderna',
-        startNode: 'Artificial Intelligence',
-        nodeCount: 67,
-        edgeCount: 203,
-        createdAt: '2024-01-14T15:45:00Z',
-        lastModified: '2024-01-14T15:45:00Z'
-      }
-    ];
-    
-    setTimeout(() => {
-      setExplorations(mockExplorations);
-    }, 500);
-  }, []);
-
-  const handleLoadExploration = (exploration: SavedExploration) => {
-    toast.success(`Cargando exploración: ${exploration.name}`);
-    // This would load the exploration data
-    console.log('Loading exploration:', exploration);
+  const loadExplorations = async () => {
+    try {
+      setIsLoading(true);
+      const filters: ExplorationFilters = {
+        limit: 10,
+        offset: (page - 1) * 10,
+        search: searchTerm || undefined,
+      };
+      
+      const response = await api.explorations.list(filters);
+      setExplorations(response.explorations);
+      setTotalCount(response.total);
+    } catch (error: any) {
+      console.error('Error loading explorations:', error);
+      toast.error(error.response?.data?.detail || 'Error cargando las exploraciones');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleDeleteExploration = async (explorationId: string) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar esta exploración?')) {
-      return;
+  useEffect(() => {
+    loadExplorations();
+  }, [page, searchTerm]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPage(1);
+    loadExplorations();
+  };
+
+  const handleLoadExploration = (exploration: SavedExploration) => {
+    // Navegar al explorador con los datos cargados
+    navigate('/explorer', { 
+      state: { 
+        loadedExploration: exploration 
+      } 
+    });
+  };
+
+  const handleDeleteExploration = async (id: string) => {
+    // Encontrar la exploración para mostrar en el modal
+    const exploration = explorations.find(exp => exp.id === id);
+    if (exploration) {
+      setExplorationToDelete(exploration);
+      setShowDeleteModal(true);
     }
+  };
+
+  const confirmDelete = async () => {
+    if (!explorationToDelete?.id) return;
 
     try {
-      // This would delete from API
-      setExplorations(prev => prev.filter(exp => exp.id !== explorationId));
-      toast.success('Exploración eliminada');
-    } catch (error) {
+      await api.explorations.delete(explorationToDelete.id);
+      toast.success('Exploración eliminada exitosamente');
+      loadExplorations(); // Recargar la lista
+    } catch (error: any) {
       console.error('Error deleting exploration:', error);
-      toast.error('Error al eliminar la exploración');
+      toast.error(error.response?.data?.detail || 'Error eliminando la exploración');
+    } finally {
+      setShowDeleteModal(false);
+      setExplorationToDelete(null);
     }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setExplorationToDelete(null);
   };
 
   const formatDate = (dateString: string) => {
@@ -101,12 +117,26 @@ export function ExplorationsPage() {
           
           <button
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2 transition-colors"
-            onClick={() => window.location.href = '/'}
+            onClick={() => navigate('/explorer')}
           >
             <Plus size={16} />
             <span>Nueva Exploración</span>
           </button>
         </div>
+
+        {/* Search bar */}
+        <form onSubmit={handleSearch} className="mt-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            <input
+              type="text"
+              placeholder="Buscar exploraciones..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+        </form>
       </div>
 
       {/* Loading state */}
@@ -164,21 +194,21 @@ export function ExplorationsPage() {
                           <div className="flex items-center space-x-6 text-sm text-gray-500">
                             <span className="flex items-center space-x-1">
                               <span>📊</span>
-                              <span>{exploration.nodeCount} nodos</span>
+                              <span>{exploration.graph_data?.nodes?.length || 0} nodos</span>
                             </span>
                             <span className="flex items-center space-x-1">
                               <span>🔗</span>
-                              <span>{exploration.edgeCount} conexiones</span>
+                              <span>{exploration.graph_data?.edges?.length || 0} conexiones</span>
                             </span>
                             <span className="flex items-center space-x-1">
                               <Calendar size={14} />
-                              <span>{formatDate(exploration.createdAt)}</span>
+                              <span>{formatDate(exploration.created_at || '')}</span>
                             </span>
                           </div>
                           
                           <div className="mt-3">
                             <span className="text-sm text-gray-600">
-                              Nodo inicial: <span className="font-medium text-gray-900">{exploration.startNode}</span>
+                              Nodo inicial: <span className="font-medium text-gray-900">{exploration.root_node}</span>
                             </span>
                           </div>
                         </div>
@@ -195,7 +225,7 @@ export function ExplorationsPage() {
                       </button>
                       
                       <button
-                        onClick={() => handleDeleteExploration(exploration.id)}
+                        onClick={() => handleDeleteExploration(exploration.id || '')}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         title="Eliminar exploración"
                       >
@@ -227,27 +257,35 @@ export function ExplorationsPage() {
             
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">
-                {explorations.reduce((sum, exp) => sum + exp.nodeCount, 0)}
+                {explorations.reduce((sum, exp) => sum + (exp.graph_data?.nodes?.length || 0), 0)}
               </div>
               <div className="text-sm text-gray-600">Nodos totales</div>
             </div>
             
             <div className="text-center">
               <div className="text-2xl font-bold text-purple-600">
-                {explorations.reduce((sum, exp) => sum + exp.edgeCount, 0)}
+                {explorations.reduce((sum, exp) => sum + (exp.graph_data?.edges?.length || 0), 0)}
               </div>
               <div className="text-sm text-gray-600">Conexiones totales</div>
             </div>
             
             <div className="text-center">
               <div className="text-2xl font-bold text-orange-600">
-                {Math.round(explorations.reduce((sum, exp) => sum + exp.nodeCount, 0) / explorations.length)}
+                {Math.round(explorations.reduce((sum, exp) => sum + (exp.graph_data?.nodes?.length || 0), 0) / explorations.length)}
               </div>
               <div className="text-sm text-gray-600">Promedio nodos</div>
             </div>
           </div>
         </div>
       )}
+
+      {/* Modal de confirmación de eliminación */}
+      <DeleteConfirmationModal
+        isOpen={showDeleteModal}
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+        exploration={explorationToDelete}
+      />
     </div>
   );
 }

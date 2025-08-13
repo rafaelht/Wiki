@@ -129,3 +129,41 @@
     background-color: rgba(255, 255, 255, 0.8);
   }
 }
+
+/* React Hot Toast custom styles */
+[data-sonner-toaster] {
+  z-index: 10000 !important;
+}
+
+[data-sonner-toast] {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  border-radius: 8px !important;
+  font-family: inherit !important;
+}
+
+[data-sonner-toast][data-type="success"] {
+  background: #f0fdf4 !important;
+  border: 1px solid #bbf7d0 !important;
+  color: #166534 !important;
+}
+
+[data-sonner-toast][data-type="error"] {
+  background: #fef2f2 !important;
+  border: 1px solid #fecaca !important;
+  color: #dc2626 !important;
+}
+
+/* Ensure toasts don't overlap with other content */
+.Toaster__toast {
+  z-index: 10000 !important;
+  position: relative !important;
+  max-width: 420px !important;
+  margin-bottom: 8px !important;
+}
+
+/* Fix for potential text rendering issues */
+.Toaster__toast * {
+  text-shadow: none !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

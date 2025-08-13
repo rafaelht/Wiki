@@ -19,6 +19,8 @@ from app.models.responses import (
     GraphData
 )
 from app.database.connection import get_database
+from app.auth.dependencies import get_current_active_user, get_user_or_guest
+from app.models.user import UserResponse
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +29,8 @@ router = APIRouter()
 @router.post("/explorations", response_model=SavedExploration)
 async def create_exploration(
     request: CreateExplorationRequest,
-    db: AsyncIOMotorDatabase = Depends(get_database)
+    current_user: UserResponse = Depends(get_current_active_user),
+    db = Depends(get_database)
 ) -> SavedExploration:
     """
     Guarda una nueva exploración de grafo en la base de datos
@@ -74,16 +77,21 @@ async def create_exploration(
     try:
         logger.info(f"Creando nueva exploración: '{request.name}'")
         
+        # Convertir graph_data a dict para MongoDB, convirtiendo URLs a strings
+        graph_data_dict = request.graph_data.model_dump(mode='json') if request.graph_data else {}
+        
         # Preparar documento para MongoDB
         now = datetime.utcnow()
+        # Crear documento de exploración
         exploration_doc = {
             "name": request.name,
-            "description": request.description,
+            "description": request.description or "",
+            "user_id": current_user.id,  # Agregar user_id
             "root_node": request.root_node,
-            "graph_data": request.graph_data.dict(),
-            "tags": request.tags,
-            "created_at": now,
-            "updated_at": now
+            "graph_data": graph_data_dict,
+            "tags": request.tags or [],
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
         }
         
         # Insertar en MongoDB

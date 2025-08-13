@@ -1,256 +1,226 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { Network } from 'vis-network/standalone';
-import { DataSet } from 'vis-data/esnext';
-import { 
-  GraphData, 
-  GraphNode, 
-  GraphEdge, 
-  NetworkOptions,
-  GraphVisualizationProps 
-} from '../types';
-import { 
-  ZoomIn, 
-  ZoomOut, 
-  RotateCcw, 
-  Settings, 
-  Download,
-  Maximize2,
-  Minimize2
-} from 'lucide-react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { Network } from 'vis-network';
+import { DataSet } from 'vis-data';
+import { GraphVisualizationProps, GraphNode, GraphEdge } from '../types';
+import { ZoomIn, ZoomOut, RotateCcw, Maximize2, Info } from 'lucide-react';
 
 interface GraphVisualizationComponentProps extends GraphVisualizationProps {
   className?: string;
-  showControls?: boolean;
-  showStats?: boolean;
 }
 
-export const GraphVisualization: React.FC<GraphVisualizationComponentProps> = ({
-  data,
+const GraphVisualization: React.FC<GraphVisualizationComponentProps> = ({ 
+  data, 
+  graphData,
   onNodeClick,
   onEdgeClick,
-  height = '600px',
+  height = 600,
   width = '100%',
-  options: customOptions,
-  className = '',
   showControls = true,
-  showStats = true
+  showStats = true,
+  options: customOptions,
+  className = ''
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const networkRef = useRef<Network | null>(null);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [networkStats, setNetworkStats] = useState({
-    scale: 1,
-    position: { x: 0, y: 0 },
-    selectedNodes: 0,
-    selectedEdges: 0
-  });
+  const [isStatsVisible, setIsStatsVisible] = useState(false);
 
-  // Default network options
-  const defaultOptions: NetworkOptions = {
-    nodes: {
-      shape: 'dot',
-      size: 20,
-      font: {
-        size: 14,
-        color: '#333333'
-      },
-      borderWidth: 2,
-      shadow: true,
-      chosen: {
-        node: (values, id, selected, hovering) => {
-          if (hovering || selected) {
-            values.size = 25;
-            values.borderWidth = 3;
-          }
-        }
+  // Use either data or graphData prop
+  const displayData = data || graphData || {
+    nodes: [],
+    edges: [],
+    root_node: '',
+    total_nodes: 0,
+    total_edges: 0,
+    max_depth: 0
+  };
+
+  // Transform graph data to vis-network format
+  const transformDataForVis = useCallback(() => {
+    // Validate and transform nodes
+    const validNodes = displayData.nodes.filter(node => {
+      if (!node.id || !node.label) {
+        console.warn('⚠️ Invalid node found:', node);
+        return false;
       }
-    },
-    edges: {
-      arrows: {
-        to: {
-          enabled: true,
-          scaleFactor: 0.8
-        }
-      },
+      return true;
+    });
+
+    const nodes = validNodes.map((node: GraphNode) => ({
+      id: node.id,
+      label: node.label,
+      title: `${node.label}\n${node.summary || 'Click para más información'}`,
       color: {
-        color: '#848484',
-        highlight: '#3b82f6',
-        hover: '#60a5fa'
-      },
-      width: 2,
-      smooth: {
-        enabled: true,
-        type: 'dynamic',
-        roundness: 0.5
-      },
-      chosen: {
-        edge: (values, id, selected, hovering) => {
-          if (hovering || selected) {
-            values.width = 4;
-          }
+        background: node.color || getNodeColor(node.depth),
+        border: node.depth === 0 ? '#ff6b6b' : '#2c3e50',
+        highlight: {
+          background: '#ffd93d',
+          border: '#ff6b6b'
         }
+      },
+      size: node.size || (node.depth === 0 ? 30 : Math.max(10, 20 - node.depth * 2)),
+      font: {
+        size: 12,
+        color: '#2c3e50'
+      },
+      borderWidth: node.depth === 0 ? 3 : 2,
+      shape: 'dot'
+    }));
+
+    // Validate and transform edges
+    const validEdges = displayData.edges.filter(edge => {
+      const fromNode = edge.from || edge.from_node;
+      const toNode = edge.to || edge.to_node;
+      
+      if (!fromNode || !toNode) {
+        console.warn('⚠️ Invalid edge found (missing from/to nodes):', edge);
+        return false;
       }
-    },
+      
+      // Check if both nodes exist in the nodes array
+      const fromExists = validNodes.some(node => node.id === fromNode);
+      const toExists = validNodes.some(node => node.id === toNode);
+      
+      if (!fromExists || !toExists) {
+        console.warn('⚠️ Edge references non-existent nodes:', edge, { fromExists, toExists });
+        return false;
+      }
+      
+      return true;
+    });
+
+    const edges = validEdges.map((edge: GraphEdge) => {
+      const fromNode = edge.from || edge.from_node;
+      const toNode = edge.to || edge.to_node;
+      const edgeId = edge.id || `${fromNode}-${toNode}`;
+      
+      return {
+        id: edgeId,
+        from: fromNode,
+        to: toNode,
+        width: Math.max(1, (edge.weight || 1) * 2),
+        color: '#95a5a6',
+        arrows: {
+          to: {
+            enabled: true,
+            scaleFactor: 0.8
+          }
+        },
+        smooth: true
+      };
+    });
+
+    // Check for duplicate edge IDs and make them unique
+    const edgeIds = edges.map(e => e.id);
+    const duplicateIds = edgeIds.filter((id, index) => edgeIds.indexOf(id) !== index);
+    if (duplicateIds.length > 0) {
+      console.warn('⚠️ Duplicate edge IDs found:', duplicateIds);
+      
+      // Make edge IDs unique by adding index
+      const seenIds = new Set<string>();
+      edges.forEach((edge) => {
+        let finalId = edge.id;
+        let counter = 1;
+        
+        while (seenIds.has(finalId)) {
+          finalId = `${edge.id}-${counter}`;
+          counter++;
+        }
+        
+        seenIds.add(finalId);
+        edge.id = finalId;
+      });
+    }
+
+    return { nodes: new DataSet(nodes), edges: new DataSet(edges) };
+  }, [displayData]);
+
+  // Get node color based on depth
+  const getNodeColor = (depth: number): string => {
+    const colors = [
+      '#e74c3c', // Red for root (depth 0)
+      '#3498db', // Blue for depth 1
+      '#2ecc71', // Green for depth 2
+      '#f39c12', // Orange for depth 3
+      '#9b59b6', // Purple for depth 4
+      '#1abc9c', // Teal for depth 5+
+    ];
+    return colors[Math.min(depth, colors.length - 1)];
+  };
+
+  // Default vis-network options
+  const defaultOptions = {
     physics: {
       enabled: true,
-      solver: 'hierarchicalRepulsion',
-      hierarchicalRepulsion: {
-        nodeDistance: 120,
-        centralGravity: 0.3,
-        springLength: 100,
-        springConstant: 0.01,
-        damping: 0.09
+      stabilization: {
+        iterations: 100
       }
     },
     layout: {
-      hierarchical: {
-        enabled: false,
-        direction: 'UD',
-        sortMethod: 'directed',
-        levelSeparation: 150,
-        nodeSpacing: 100,
-        treeSpacing: 200
-      }
+      improvedLayout: true
     },
     interaction: {
       hover: true,
-      tooltipDelay: 300,
-      hideEdgesOnDrag: false,
-      hideNodesOnDrag: false
+      tooltipDelay: 200
+    },
+    nodes: {
+      font: {
+        size: 12,
+        color: '#2c3e50'
+      },
+      borderWidth: 2,
+      shadow: true
+    },
+    edges: {
+      width: 1,
+      arrows: {
+        to: {
+          enabled: true
+        }
+      },
+      smooth: true
     }
   };
 
   // Merge custom options with defaults
-  const finalOptions = React.useMemo(() => {
-    return customOptions ? { ...defaultOptions, ...customOptions } : defaultOptions;
-  }, [customOptions]);
-
-  // Convert graph data to vis.js format
-  const convertToVisData = useCallback((graphData: GraphData) => {
-    const nodes = new DataSet(graphData.nodes.map(node => ({
-      id: node.id,
-      label: node.label,
-      title: `<b>${node.label}</b><br/>Level: ${node.depth}<br/>Degree: ${node.degree || 0}${node.centrality ? `<br/>Centrality: ${node.centrality.toFixed(3)}` : ''}`,
-      level: node.depth,
-      color: node.color || getNodeColor(node.depth),
-      size: node.size || getNodeSize(node.degree || 0),
-      ...node
-    })));
-
-    const edges = new DataSet(graphData.edges.map((edge, index) => ({
-      id: `edge-${index}`,
-      from: edge.from,
-      to: edge.to,
-      width: edge.weight || 1,
-      arrows: { to: true }
-    })));
-
-    return { nodes, edges };
-  }, []);
-
-  // Helper functions for styling
-  const getNodeColor = (level: number): string => {
-    const colors = [
-      '#3b82f6', // blue-500 (level 0)
-      '#10b981', // emerald-500 (level 1)
-      '#f59e0b', // amber-500 (level 2)
-      '#ef4444', // red-500 (level 3)
-      '#8b5cf6', // violet-500 (level 4+)
-    ];
-    return colors[Math.min(level, colors.length - 1)];
-  };
-
-  const getNodeSize = (degree: number): number => {
-    return Math.max(15, Math.min(40, 15 + degree * 2));
-  };
+  const networkOptions = { ...defaultOptions, ...customOptions };
 
   // Initialize network
   useEffect(() => {
-    if (!containerRef.current || !data) return;
+    if (!containerRef.current || displayData.nodes.length === 0) return;
 
-    setIsLoading(true);
+    const visData = transformDataForVis();
+    networkRef.current = new Network(containerRef.current, visData, networkOptions as any);
 
-    try {
-      const visData = convertToVisData(data);
-      
-      // Create network
-      const network = new Network(containerRef.current, visData, finalOptions);
-      networkRef.current = network;
-
-      // Event handlers
-      network.on('click', (params) => {
-        if (params.nodes.length > 0 && onNodeClick) {
-          const nodeId = params.nodes[0];
-          const node = data.nodes.find(n => n.id === nodeId);
-          if (node) onNodeClick(node);
+    // Event handlers
+    networkRef.current.on('click', (event) => {
+      if (event.nodes.length > 0) {
+        const nodeId = event.nodes[0];
+        const node = displayData.nodes.find((n: GraphNode) => n.id === nodeId);
+        if (node) {
+          onNodeClick?.(node);
         }
-        
-        if (params.edges.length > 0 && onEdgeClick) {
-          const edgeId = params.edges[0];
-          const edge = data.edges.find(e => e.id === edgeId);
-          if (edge) onEdgeClick(edge);
+      } else if (event.edges.length > 0) {
+        const edgeId = event.edges[0];
+        const edge = displayData.edges.find((e: GraphEdge) => 
+          (e.id || `${e.from_node}-${e.to_node}`) === edgeId
+        );
+        if (edge) {
+          onEdgeClick?.(edge);
         }
-      });
+      }
+    });
 
-      network.on('zoom', (params) => {
-        setNetworkStats(prev => ({
-          ...prev,
-          scale: params.scale
-        }));
-      });
+    networkRef.current.on('hoverNode', () => {
+      if (containerRef.current) {
+        containerRef.current.style.cursor = 'pointer';
+      }
+    });
 
-      network.on('dragEnd', (params) => {
-        const position = network.getViewPosition();
-        setNetworkStats(prev => ({
-          ...prev,
-          position
-        }));
-      });
-
-      network.on('selectNode', (params) => {
-        setNetworkStats(prev => ({
-          ...prev,
-          selectedNodes: params.nodes.length
-        }));
-      });
-
-      network.on('selectEdge', (params) => {
-        setNetworkStats(prev => ({
-          ...prev,
-          selectedEdges: params.edges.length
-        }));
-      });
-
-      network.on('deselectNode', () => {
-        setNetworkStats(prev => ({
-          ...prev,
-          selectedNodes: 0
-        }));
-      });
-
-      network.on('deselectEdge', () => {
-        setNetworkStats(prev => ({
-          ...prev,
-          selectedEdges: 0
-        }));
-      });
-
-      // Fit network after stabilization
-      network.once('stabilizationIterationsDone', () => {
-        network.fit({
-          animation: {
-            duration: 1000,
-            easingFunction: 'easeInOutQuad'
-          }
-        });
-        setIsLoading(false);
-      });
-
-    } catch (error) {
-      console.error('Error initializing network:', error);
-      setIsLoading(false);
-    }
+    networkRef.current.on('blurNode', () => {
+      if (containerRef.current) {
+        containerRef.current.style.cursor = 'default';
+      }
+    });
 
     // Cleanup
     return () => {
@@ -259,175 +229,144 @@ export const GraphVisualization: React.FC<GraphVisualizationComponentProps> = ({
         networkRef.current = null;
       }
     };
-  }, [data, finalOptions, convertToVisData, onNodeClick, onEdgeClick]);
+  }, [displayData, transformDataForVis, networkOptions, onNodeClick, onEdgeClick]);
 
   // Control functions
   const zoomIn = () => {
     if (networkRef.current) {
-      const scale = networkRef.current.getScale() * 1.2;
-      networkRef.current.moveTo({ scale });
+      const scale = networkRef.current.getScale();
+      networkRef.current.moveTo({ scale: scale * 1.2 });
     }
   };
 
   const zoomOut = () => {
     if (networkRef.current) {
-      const scale = networkRef.current.getScale() * 0.8;
-      networkRef.current.moveTo({ scale });
+      const scale = networkRef.current.getScale();
+      networkRef.current.moveTo({ scale: scale * 0.8 });
     }
   };
 
   const resetView = () => {
     if (networkRef.current) {
-      networkRef.current.fit({
-        animation: {
-          duration: 500,
-          easingFunction: 'easeInOutQuad'
-        }
-      });
-    }
-  };
-
-  const exportNetwork = () => {
-    if (!networkRef.current || !containerRef.current) return;
-
-    try {
-      const canvas = containerRef.current.querySelector('canvas') as HTMLCanvasElement;
-      if (canvas) {
-        const link = document.createElement('a');
-        link.download = `wikipedia-graph-${Date.now()}.png`;
-        link.href = canvas.toDataURL();
-        link.click();
-      }
-    } catch (error) {
-      console.error('Error exporting network:', error);
+      networkRef.current.fit();
     }
   };
 
   const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
+    if (containerRef.current) {
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      } else {
+        containerRef.current.requestFullscreen();
+      }
+    }
   };
 
-  const containerStyle = {
-    height: typeof height === 'string' ? height : `${height}px`,
-    width: typeof width === 'string' ? width : `${width}px`
-  };
-
-  return (
-    <div className={`relative bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden ${className} ${isFullscreen ? 'fixed inset-0 z-50 rounded-none border-0' : ''}`}>
-      {/* Loading overlay */}
-      {isLoading && (
-        <div className="absolute inset-0 bg-white bg-opacity-80 flex items-center justify-center z-10">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
-            <p className="text-sm text-gray-600">Construyendo grafo...</p>
+  if (displayData.nodes.length === 0) {
+    return (
+      <div className={`w-full ${className}`}>
+        <div 
+          className="border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 flex items-center justify-center"
+          style={{ height: typeof height === 'number' ? `${height}px` : height }}
+        >
+          <div className="text-center text-gray-500">
+            <div className="mb-2">
+              <Info size={48} className="mx-auto mb-2 opacity-50" />
+            </div>
+            <p className="text-lg font-medium">No hay datos para visualizar</p>
+            <p className="text-sm">Busca un artículo de Wikipedia para comenzar</p>
           </div>
         </div>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div className={`relative ${className}`}>
+      {/* Main visualization container */}
+      <div 
+        ref={containerRef}
+        className="border border-gray-300 rounded-lg bg-white relative"
+        style={{ 
+          height: typeof height === 'number' ? `${height}px` : height,
+          width: typeof width === 'number' ? `${width}px` : width
+        }}
+      />
 
       {/* Controls */}
       {showControls && (
-        <div className="absolute top-4 right-4 z-20 flex flex-col space-y-2">
-          <div className="bg-white rounded-lg shadow-md border border-gray-200 p-1">
-            <button
-              onClick={zoomIn}
-              className="p-2 hover:bg-gray-100 rounded transition-colors"
-              title="Acercar"
-            >
-              <ZoomIn className="h-4 w-4" />
-            </button>
-            
-            <button
-              onClick={zoomOut}
-              className="p-2 hover:bg-gray-100 rounded transition-colors"
-              title="Alejar"
-            >
-              <ZoomOut className="h-4 w-4" />
-            </button>
-            
-            <button
-              onClick={resetView}
-              className="p-2 hover:bg-gray-100 rounded transition-colors"
-              title="Ajustar vista"
-            >
-              <RotateCcw className="h-4 w-4" />
-            </button>
-            
-            <button
-              onClick={exportNetwork}
-              className="p-2 hover:bg-gray-100 rounded transition-colors"
-              title="Exportar imagen"
-            >
-              <Download className="h-4 w-4" />
-            </button>
-
-            <button
-              onClick={toggleFullscreen}
-              className="p-2 hover:bg-gray-100 rounded transition-colors"
-              title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
-            >
-              {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-            </button>
-          </div>
+        <div className="absolute top-4 right-4 flex flex-col space-y-2">
+          <button
+            onClick={zoomIn}
+            className="p-2 bg-white rounded-lg shadow-md hover:bg-gray-50 transition-colors"
+            title="Acercar"
+          >
+            <ZoomIn size={16} />
+          </button>
+          <button
+            onClick={zoomOut}
+            className="p-2 bg-white rounded-lg shadow-md hover:bg-gray-50 transition-colors"
+            title="Alejar"
+          >
+            <ZoomOut size={16} />
+          </button>
+          <button
+            onClick={resetView}
+            className="p-2 bg-white rounded-lg shadow-md hover:bg-gray-50 transition-colors"
+            title="Reiniciar vista"
+          >
+            <RotateCcw size={16} />
+          </button>
+          <button
+            onClick={toggleFullscreen}
+            className="p-2 bg-white rounded-lg shadow-md hover:bg-gray-50 transition-colors"
+            title="Pantalla completa"
+          >
+            <Maximize2 size={16} />
+          </button>
         </div>
       )}
 
       {/* Stats panel */}
       {showStats && (
-        <div className="absolute top-4 left-4 z-20 bg-white rounded-lg shadow-md border border-gray-200 p-3 text-sm">
-          <div className="space-y-1">
-            <div className="font-medium text-gray-900">Estadísticas del Grafo</div>
-            <div className="text-gray-600">
-              Nodos: <span className="font-medium">{data.total_nodes}</span>
-            </div>
-            <div className="text-gray-600">
-              Conexiones: <span className="font-medium">{data.total_edges}</span>
-            </div>
-            <div className="text-gray-600">
-              Zoom: <span className="font-medium">{(networkStats.scale * 100).toFixed(0)}%</span>
-            </div>
-            {networkStats.selectedNodes > 0 && (
-              <div className="text-blue-600">
-                Seleccionados: <span className="font-medium">{networkStats.selectedNodes}</span>
+        <div className="absolute top-4 left-4">
+          <button
+            onClick={() => setIsStatsVisible(!isStatsVisible)}
+            className="p-2 bg-white rounded-lg shadow-md hover:bg-gray-50 transition-colors mb-2"
+            title="Mostrar estadísticas"
+          >
+            <Info size={16} />
+          </button>
+          
+          {isStatsVisible && (
+            <div className="bg-white rounded-lg shadow-lg p-4 min-w-48">
+              <h3 className="font-semibold mb-3 text-gray-800">Estadísticas del Grafo</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span>Nodos:</span>
+                  <span className="font-medium">{displayData.total_nodes}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Aristas:</span>
+                  <span className="font-medium">{displayData.total_edges}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Profundidad máxima:</span>
+                  <span className="font-medium">{displayData.max_depth}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Nodo raíz:</span>
+                  <span className="font-medium text-red-600">{displayData.root_node}</span>
+                </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Network container */}
-      <div
-        ref={containerRef}
-        style={containerStyle}
-        className="w-full h-full"
-      />
-
-      {/* Legend */}
-      <div className="absolute bottom-4 left-4 z-20 bg-white rounded-lg shadow-md border border-gray-200 p-3 text-xs">
-        <div className="font-medium text-gray-900 mb-2">Leyenda</div>
-        <div className="space-y-1">
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-            <span className="text-gray-600">Nivel 0 (Inicial)</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
-            <span className="text-gray-600">Nivel 1</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-            <span className="text-gray-600">Nivel 2</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 rounded-full bg-red-500"></div>
-            <span className="text-gray-600">Nivel 3+</span>
-          </div>
-        </div>
-        <div className="mt-2 pt-2 border-t border-gray-200">
-          <div className="text-gray-500">Tamaño = Grado de conexión</div>
-        </div>
-      </div>
     </div>
   );
 };
 
+export { GraphVisualization };
 export default GraphVisualization;

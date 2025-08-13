@@ -3,6 +3,7 @@ import { Search, Loader2, AlertCircle } from 'lucide-react';
 import { useGraphStore } from '../store/graphStore';
 import { WikipediaArticle } from '../types';
 import { debounce } from '../utils';
+import { api } from '../services/api';
 
 interface SearchBarProps {
   onArticleSelect?: (article: WikipediaArticle) => void;
@@ -38,11 +39,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
     setError(null);
 
     try {
-      const response = await fetch(`http://localhost:8000/api/search?term=${encodeURIComponent(searchQuery)}`);
-      if (!response.ok) throw new Error('Search failed');
-      
-      const data = await response.json();
-      setResults(data.results || []);
+      const response = await api.search(searchQuery);
+      setResults(response.results || []);
       setShowDropdown(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');

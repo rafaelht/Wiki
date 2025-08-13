@@ -5,7 +5,7 @@
  * header y contenido principal.
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   Menu, 
@@ -15,9 +15,13 @@ import {
   Save, 
   Info,
   Github,
-  ExternalLink 
+  ExternalLink,
+  User,
+  LogOut,
+  ChevronDown
 } from 'lucide-react';
 import { useNavigationActions } from '../store/graphStore';
+import { useAuthStore } from '../store/authStore';
 import clsx from 'clsx';
 
 interface LayoutProps {
@@ -26,8 +30,10 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const location = useLocation();
   const { canGoBack, goBack } = useNavigationActions();
+  const { user, isAuthenticated, logout } = useAuthStore();
 
   const navigationItems = [
     {
@@ -53,6 +59,19 @@ export function Layout({ children }: LayoutProps) {
   const isCurrentPath = (path: string) => {
     return location.pathname === path;
   };
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (isUserMenuOpen && !target.closest('[data-user-menu]')) {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isUserMenuOpen]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -119,6 +138,50 @@ export function Layout({ children }: LayoutProps) {
                 </button>
               )}
 
+              {/* Menu de usuario */}
+              {isAuthenticated && user && (
+                <div className="relative" data-user-menu>
+                  <button
+                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                    className="flex items-center space-x-2 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    <User size={16} />
+                    <span className="hidden sm:block">{user.username}</span>
+                    <ChevronDown size={14} />
+                  </button>
+
+                  {/* Dropdown menu */}
+                  {isUserMenuOpen && (
+                    <>
+                      {/* Overlay for mobile */}
+                      <div
+                        className="fixed inset-0 z-30 md:hidden"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      />
+                      
+                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-40">
+                        <div className="p-3 border-b border-gray-100">
+                          <p className="text-sm font-medium text-gray-900">{user.full_name || user.username}</p>
+                          <p className="text-xs text-gray-500">{user.email}</p>
+                        </div>
+                        <div className="p-1">
+                          <button
+                            onClick={() => {
+                              logout();
+                              setIsUserMenuOpen(false);
+                            }}
+                            className="flex items-center space-x-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded transition-colors"
+                          >
+                            <LogOut size={16} />
+                            <span>Cerrar sesión</span>
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
               {/* Enlace a GitHub */}
               <a
                 href="https://github.com"
@@ -145,33 +208,61 @@ export function Layout({ children }: LayoutProps) {
           
           {/* Sidebar */}
           <div className="fixed left-0 top-16 bottom-0 w-64 bg-white border-r border-gray-200 z-50 md:hidden overflow-y-auto">
-            <nav className="p-4 space-y-2">
-              {navigationItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    onClick={() => setIsSidebarOpen(false)}
-                    className={clsx(
-                      'flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors',
-                      isCurrentPath(item.path)
-                        ? 'bg-primary-50 text-primary-700 border border-primary-200'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                    )}
-                  >
-                    <Icon size={20} />
-                    <div>
-                      <div className="font-medium">{item.name}</div>
-                      <div className="text-sm text-gray-500">{item.description}</div>
-                    </div>
-                  </Link>
-                );
-              })}
-            </nav>
+            <div className="flex flex-col h-full">
+              <nav className="flex-1 p-4 space-y-2">
+                {navigationItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={() => setIsSidebarOpen(false)}
+                      className={clsx(
+                        'flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors',
+                        isCurrentPath(item.path)
+                          ? 'bg-primary-50 text-primary-700 border border-primary-200'
+                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                      )}
+                    >
+                      <Icon size={20} />
+                      <div>
+                        <div className="font-medium">{item.name}</div>
+                        <div className="text-sm text-gray-500">{item.description}</div>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </nav>
+
+            {/* User info and logout for mobile */}
+            {isAuthenticated && user && (
+              <div className="p-4 border-t border-gray-200">
+                <div className="flex items-center space-x-3 mb-3">
+                  <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
+                    <User size={16} className="text-primary-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {user.full_name || user.username}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    logout();
+                    setIsSidebarOpen(false);
+                  }}
+                  className="flex items-center space-x-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  <LogOut size={16} />
+                  <span>Cerrar sesión</span>
+                </button>
+              </div>
+            )}
 
             {/* Footer del sidebar */}
-            <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 bg-gray-50">
+            <div className="p-4 border-t border-gray-200 bg-gray-50">
               <div className="text-center">
                 <p className="text-sm text-gray-600 mb-2">
                   Prueba Técnica
@@ -187,6 +278,7 @@ export function Layout({ children }: LayoutProps) {
                   <ExternalLink size={12} />
                 </a>
               </div>
+            </div>
             </div>
           </div>
         </>
