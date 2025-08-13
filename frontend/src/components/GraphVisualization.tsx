@@ -23,6 +23,8 @@ const GraphVisualization: React.FC<GraphVisualizationComponentProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const networkRef = useRef<Network | null>(null);
   const [isStatsVisible, setIsStatsVisible] = useState(false);
+  const nodePositionsRef = useRef<Map<string, {x: number, y: number}>>(new Map());
+  const isStabilizedRef = useRef(false);
 
   // Use either data or graphData prop
   const displayData = data || graphData || {
@@ -45,26 +47,39 @@ const GraphVisualization: React.FC<GraphVisualizationComponentProps> = ({
       return true;
     });
 
-    const nodes = validNodes.map((node: GraphNode) => ({
-      id: node.id,
-      label: node.label,
-      title: `${node.label}\n${node.summary || 'Click para más información'}`,
-      color: {
-        background: node.color || getNodeColor(node.depth),
-        border: node.depth === 0 ? '#ff6b6b' : '#2c3e50',
-        highlight: {
-          background: '#ffd93d',
-          border: '#ff6b6b'
-        }
-      },
-      size: node.size || (node.depth === 0 ? 30 : Math.max(10, 20 - node.depth * 2)),
-      font: {
-        size: 12,
-        color: '#2c3e50'
-      },
-      borderWidth: node.depth === 0 ? 3 : 2,
-      shape: 'dot'
-    }));
+    const nodes = validNodes.map((node: GraphNode) => {
+      // Usar posición guardada si existe, de lo contrario dejar que la física la determine
+      const savedPosition = nodePositionsRef.current.get(node.id);
+      const nodeData: any = {
+        id: node.id,
+        label: node.label,
+        title: `${node.label}\n${node.summary || 'Click para más información'}`,
+        color: {
+          background: node.color || getNodeColor(node.depth),
+          border: node.depth === 0 ? '#ff6b6b' : '#2c3e50',
+          highlight: {
+            background: '#ffd93d',
+            border: '#ff6b6b'
+          }
+        },
+        size: node.size || (node.depth === 0 ? 30 : Math.max(10, 20 - node.depth * 2)),
+        font: {
+          size: 12,
+          color: '#2c3e50'
+        },
+        borderWidth: node.depth === 0 ? 3 : 2,
+        shape: 'dot'
+      };
+
+      // Si tenemos posición guardada, usarla
+      if (savedPosition) {
+        nodeData.x = savedPosition.x;
+        nodeData.y = savedPosition.y;
+        nodeData.fixed = true; // Fijar posición
+      }
+
+      return nodeData;
+    });
 
     // Validate and transform edges
     const validEdges = displayData.edges.filter(edge => {
@@ -152,15 +167,29 @@ const GraphVisualization: React.FC<GraphVisualizationComponentProps> = ({
     physics: {
       enabled: true,
       stabilization: {
-        iterations: 100
+        enabled: true,
+        iterations: 200,
+        updateInterval: 25
+      },
+      solver: 'repulsion',
+      repulsion: {
+        nodeDistance: 120,
+        centralGravity: 0.3,
+        springLength: 100,
+        springConstant: 0.05,
+        damping: 0.09
       }
     },
     layout: {
-      improvedLayout: true
+      improvedLayout: true,
+      randomSeed: 42 // Semilla fija para layout consistente
     },
     interaction: {
       hover: true,
-      tooltipDelay: 200
+      tooltipDelay: 200,
+      dragNodes: true, // Permitir arrastrar para ajustes menores
+      zoomView: true,
+      dragView: true
     },
     nodes: {
       font: {
@@ -189,7 +218,55 @@ const GraphVisualization: React.FC<GraphVisualizationComponentProps> = ({
     if (!containerRef.current || displayData.nodes.length === 0) return;
 
     const visData = transformDataForVis();
-    networkRef.current = new Network(containerRef.current, visData, networkOptions as any);
+    
+    // Si es la primera vez o hay nodos nuevos, reinicializar
+    const existingNodeIds = Array.from(nodePositionsRef.current.keys());
+    const currentNodeIds = displayData.nodes.map(n => n.id);
+    const hasNewNodes = currentNodeIds.some(id => !existingNodeIds.includes(id));
+    
+    if (!networkRef.current) {
+      // Primera inicialización
+      networkRef.current = new Network(containerRef.current, visData, networkOptions as any);
+      isStabilizedRef.current = false;
+    } else if (hasNewNodes) {
+      // Hay nodos nuevos - actualizar datos y reactivar física temporalmente
+      console.log('📈 Nodos nuevos detectados - aplicando física temporal');
+      networkRef.current.setOptions({ physics: { enabled: true } });
+      networkRef.current.setData(visData);
+      isStabilizedRef.current = false;
+    } else {
+      // Solo actualizar datos sin cambiar física
+      networkRef.current.setData(visData);
+    }
+
+    // Event handler para cuando se estabiliza la física
+    const handleStabilization = () => {
+      if (isStabilizedRef.current) return; // Ya estabilizado
+      
+      console.log('🔒 Grafo estabilizado - guardando posiciones');
+      
+      // Guardar posiciones actuales
+      const positions = networkRef.current!.getPositions();
+      
+      Object.keys(positions).forEach(nodeId => {
+        nodePositionsRef.current.set(nodeId, {
+          x: positions[nodeId].x,
+          y: positions[nodeId].y
+        });
+      });
+      
+      // Marcar como estabilizado y deshabilitar física
+      isStabilizedRef.current = true;
+      networkRef.current!.setOptions({
+        physics: { enabled: false }
+      });
+      
+      console.log(`💾 Posiciones guardadas para ${nodePositionsRef.current.size} nodos`);
+    };
+
+    // Limpiar eventos anteriores y agregar nuevos
+    networkRef.current.off('stabilizationIterationsDone');
+    networkRef.current.on('stabilizationIterationsDone', handleStabilization);
 
     // Event handlers
     networkRef.current.on('click', (event) => {
@@ -264,100 +341,8 @@ const GraphVisualization: React.FC<GraphVisualizationComponentProps> = ({
     if (!networkRef.current) return;
 
     try {
-      // Obtener conexiones del nodo
-      const connectedNodes = networkRef.current.getConnectedNodes(nodeId);
-      const connectedEdges = networkRef.current.getConnectedEdges(nodeId);
-      const allNodes = [nodeId, ...connectedNodes];
-
-      // Resaltar nodo y sus conexiones
-      const visData = transformDataForVis();
-      
-      // Actualizar nodos con resaltado
-      const updatedNodes = visData.nodes.map((node: any) => {
-        if (node.id === nodeId) {
-          // Nodo seleccionado: más grande y color especial
-          return {
-            ...node,
-            color: {
-              background: '#ff6b6b',
-              border: '#e55353',
-              highlight: {
-                background: '#ff5252',
-                border: '#d32f2f'
-              }
-            },
-            size: 35,
-            borderWidth: 4,
-            font: { ...node.font, size: 14, color: '#000' }
-          };
-        } else if (allNodes.includes(node.id)) {
-          // Nodos conectados: resaltados
-          return {
-            ...node,
-            color: {
-              background: '#4ecdc4',
-              border: '#45b7aa',
-              highlight: {
-                background: '#26a69a',
-                border: '#00695c'
-              }
-            },
-            size: 25,
-            borderWidth: 3,
-            font: { ...node.font, size: 12, color: '#000' }
-          };
-        } else {
-          // Otros nodos: atenuados
-          return {
-            ...node,
-            color: {
-              background: '#e3e3e3',
-              border: '#c0c0c0',
-              highlight: {
-                background: '#e3e3e3',
-                border: '#c0c0c0'
-              }
-            },
-            opacity: 0.3,
-            font: { ...node.font, color: '#999' }
-          };
-        }
-      });
-
-      // Actualizar aristas con resaltado
-      const updatedEdges = visData.edges.map((edge: any) => {
-        if (connectedEdges.includes(edge.id || `${edge.from}-${edge.to}`)) {
-          // Aristas conectadas: resaltadas
-          return {
-            ...edge,
-            color: {
-              color: '#ff6b6b',
-              highlight: '#e55353'
-            },
-            width: 3,
-            shadow: true
-          };
-        } else {
-          // Otras aristas: atenuadas
-          return {
-            ...edge,
-            color: {
-              color: '#e0e0e0',
-              highlight: '#e0e0e0'
-            },
-            width: 1,
-            opacity: 0.3
-          };
-        }
-      });
-
-      // Actualizar datos del grafo
-      networkRef.current.setData({ 
-        nodes: new DataSet(updatedNodes), 
-        edges: new DataSet(updatedEdges)
-      });
-
-      // Centrar vista en el nodo y hacer zoom
+      // Solo centrar vista en el nodo y hacer zoom SIN cambiar estilos
+      // Esto evita que se muevan las posiciones de los nodos
       networkRef.current.focus(nodeId, {
         scale: 1.5,
         animation: {
@@ -366,7 +351,7 @@ const GraphVisualization: React.FC<GraphVisualizationComponentProps> = ({
         }
       });
 
-      console.log(`🎯 Centrado en nodo: ${nodeId}, conexiones: ${connectedNodes.length} nodos, ${connectedEdges.length} aristas`);
+      console.log(`🎯 Centrado en nodo: ${nodeId}`);
     } catch (error) {
       console.error('Error al centrar en el nodo:', error);
     }
@@ -377,13 +362,18 @@ const GraphVisualization: React.FC<GraphVisualizationComponentProps> = ({
     if (!networkRef.current) return;
 
     try {
-      // Restaurar datos originales
-      const visData = transformDataForVis();
-      networkRef.current.setData(visData);
+      // Ya no necesitamos resetear estilos porque no los cambiamos en focusOnNode
+      // Solo hacer fit para mostrar todo el grafo
+      networkRef.current.fit({
+        animation: {
+          duration: 500,
+          easingFunction: 'easeInOutQuad'
+        }
+      });
       
-      console.log('🔄 Resaltado reseteado');
+      console.log('🔄 Vista reseteada');
     } catch (error) {
-      console.error('Error al resetear resaltado:', error);
+      console.error('Error al resetear vista:', error);
     }
   };
 

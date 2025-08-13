@@ -48,7 +48,7 @@ export interface AuthActions {
   forceLogout: () => void;
   setGuest: () => void;
   clearError: () => void;
-  refreshUser: () => Promise<void>;
+  refreshUser: () => Promise<boolean>;
   initializeAuth: () => Promise<void>;
 }
 
@@ -60,7 +60,7 @@ export const useAuthStore = create<AuthStore>()(
   devtools(
     persist(
       (set, get) => ({
-        // Initial state - Always start unauthenticated
+        // Initial state - Will be overridden by persisted state if available
         user: null,
         token: null,
         isAuthenticated: false,
@@ -97,6 +97,9 @@ export const useAuthStore = create<AuthStore>()(
               error: null,
               isGuest: false,
             });
+
+            // Emit login event to reset other stores to welcome state
+            window.dispatchEvent(new CustomEvent('auth:login'));
 
           } catch (error) {
             set({
@@ -150,7 +153,11 @@ export const useAuthStore = create<AuthStore>()(
             isAuthenticated: false,
             error: null,
             isGuest: false,
+            isInitializing: false,
           });
+          
+          // Emit logout event to clear other stores
+          window.dispatchEvent(new CustomEvent('auth:logout'));
           
           toast.success('Sesión cerrada exitosamente');
           
@@ -185,6 +192,9 @@ export const useAuthStore = create<AuthStore>()(
             error: null,
             isGuest: true,
           });
+          
+          // Emit guest event to show welcome screen
+          window.dispatchEvent(new CustomEvent('auth:guest'));
         },
 
         clearError: () => {
@@ -193,14 +203,14 @@ export const useAuthStore = create<AuthStore>()(
 
         // Refresh user data
         refreshUser: async () => {
-          const { token, logout } = get();
+          const { token } = get();
           
           if (!token) {
-            return;
+            return false;
           }
 
           try {
-            const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+            const response = await fetch(`${API_BASE_URL}/me`, {
               headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
@@ -208,15 +218,31 @@ export const useAuthStore = create<AuthStore>()(
             });
 
             if (!response.ok) {
-              logout();
-              return;
+              // Token is invalid, clear auth state but don't force redirect
+              set({
+                user: null,
+                token: null,
+                isAuthenticated: false,
+                isGuest: false,
+                error: null
+              });
+              return false;
             }
 
             const userData = await response.json();
             set({ user: userData, isAuthenticated: true }, false, 'refreshUser');
+            return true;
           } catch (error) {
             console.error('Error refreshing user:', error);
-            logout();
+            // Clear auth state on error but don't force redirect
+            set({
+              user: null,
+              token: null,
+              isAuthenticated: false,
+              isGuest: false,
+              error: null
+            });
+            return false;
           }
         },
 
@@ -224,13 +250,49 @@ export const useAuthStore = create<AuthStore>()(
         initializeAuth: async () => {
           set({ isInitializing: true });
           
-          const { token } = get();
+          const { token, isAuthenticated } = get();
           
-          if (token) {
-            // If we have a token, validate it
-            await get().refreshUser();
+          if (token && isAuthenticated) {
+            // If we have a token and were authenticated, validate it
+            try {
+              const response = await fetch(`${API_BASE_URL}/me`, {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                },
+              });
+
+              if (response.ok) {
+                const userData = await response.json();
+                set({ 
+                  user: userData, 
+                  isAuthenticated: true,
+                  isGuest: false,
+                  error: null 
+                });
+              } else {
+                // Token is invalid, clear auth state
+                set({
+                  user: null,
+                  token: null,
+                  isAuthenticated: false,
+                  isGuest: false,
+                  error: null
+                });
+              }
+            } catch (error) {
+              console.error('Error validating token:', error);
+              // Clear auth state on error
+              set({
+                user: null,
+                token: null,
+                isAuthenticated: false,
+                isGuest: false,
+                error: null
+              });
+            }
           } else {
-            // Ensure we start clean
+            // No token or not authenticated, ensure clean state
             set({
               user: null,
               token: null,
@@ -248,9 +310,8 @@ export const useAuthStore = create<AuthStore>()(
         partialize: (state) => ({
           user: state.user,
           token: state.token,
-          // NO persisitir isAuthenticated e isGuest para forzar login en cada sesión
-          // isAuthenticated: state.isAuthenticated,
-          // isGuest: state.isGuest,
+          isAuthenticated: state.isAuthenticated, // Persistir estado de autenticación
+          isGuest: state.isGuest, // Persistir estado de invitado
         }),
       }
     ),

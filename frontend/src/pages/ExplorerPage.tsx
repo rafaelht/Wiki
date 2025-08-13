@@ -35,11 +35,48 @@ export function ExplorerPage() {
     saveCurrentExploration,
     setCurrentGraph,
     expandNode,
-    expandNodeSilently
+    expandNodeSilently,
+    clearGraph
   } = useGraphStore();
 
   // Estado del store de autenticación
   const { isAuthenticated, isGuest } = useAuthStore();
+
+  // Limpiar grafo cuando el usuario no esté autenticado o sea invitado al inicio
+  useEffect(() => {
+    if (!isAuthenticated && !isGuest && currentGraph) {
+      console.log('🧹 Limpiando grafo por logout');
+      setCurrentGraph(null);
+    }
+  }, [isAuthenticated, isGuest, currentGraph, setCurrentGraph]);
+
+  // Escuchar evento de logout para limpiar grafo
+  useEffect(() => {
+    const handleLogout = () => {
+      console.log('🧹 Limpiando grafo por evento de logout');
+      clearGraph();
+    };
+
+    const handleLogin = () => {
+      console.log('🎉 Usuario iniciado sesión - mostrando pantalla de bienvenida');
+      clearGraph(); // Limpiar para mostrar pantalla de bienvenida
+    };
+
+    const handleGuest = () => {
+      console.log('👤 Modo invitado activado - mostrando pantalla de bienvenida');
+      clearGraph(); // Limpiar para mostrar pantalla de bienvenida
+    };
+
+    window.addEventListener('auth:logout', handleLogout);
+    window.addEventListener('auth:login', handleLogin);
+    window.addEventListener('auth:guest', handleGuest);
+    
+    return () => {
+      window.removeEventListener('auth:logout', handleLogout);
+      window.removeEventListener('auth:login', handleLogin);
+      window.removeEventListener('auth:guest', handleGuest);
+    };
+  }, [clearGraph]);
 
   // Cargar exploración guardada si se pasa por la navegación
   useEffect(() => {
