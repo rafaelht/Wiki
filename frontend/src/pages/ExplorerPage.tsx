@@ -6,12 +6,12 @@
  */
 
 import { useState } from 'react';
-import { SearchBar } from '../components/SearchBar';
+import SearchBar from '../components/SearchBar';
 import { GraphVisualization } from '../components/GraphVisualization';
 import { ArticlePreview } from '../components/ArticlePreview';
 import { useGraphStore } from '../store/graphStore';
 import { WikipediaArticle, GraphNode } from '../types';
-import { Save, Download, Share2, Info, AlertCircle } from 'lucide-react';
+import { Save, Download, Share2, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export function ExplorerPage() {
