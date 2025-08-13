@@ -29,7 +29,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const { exploreFromNode, clearGraph, isLoading: graphLoading } = useGraphStore();
 
   const searchWikipedia = useCallback(async (searchQuery: string) => {
-    if (!searchQuery.trim()) {
+    if (!searchQuery.trim() || searchQuery.trim().length < 2) {
       setResults([]);
       setShowDropdown(false);
       return;
@@ -55,7 +55,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
     debounce((searchQuery: string) => {
       setIsTyping(false);
       searchWikipedia(searchQuery);
-    }, 500),
+    }, 300),
     [searchWikipedia]
   );
 
@@ -154,11 +154,6 @@ const SearchBar: React.FC<SearchBarProps> = ({
               className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
             >
               <div className="font-medium text-gray-900">{article.title}</div>
-              {article.summary && (
-                <div className="text-sm text-gray-600 mt-1">
-                  {article.summary.substring(0, 150)}...
-                </div>
-              )}
             </div>
           ))}
         </div>

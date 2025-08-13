@@ -20,7 +20,6 @@ import {
   LogOut,
   ChevronDown
 } from 'lucide-react';
-import { useNavigationActions } from '../store/graphStore';
 import { useAuthStore } from '../store/authStore';
 import clsx from 'clsx';
 
@@ -32,7 +31,6 @@ export function Layout({ children }: LayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const location = useLocation();
-  const { canGoBack, goBack } = useNavigationActions();
   const { user, isAuthenticated, logout } = useAuthStore();
 
   const navigationItems = [
@@ -127,16 +125,6 @@ export function Layout({ children }: LayoutProps) {
 
             {/* Actions */}
             <div className="flex items-center space-x-3">
-              {/* Botón de volver */}
-              {canGoBack() && (
-                <button
-                  onClick={goBack}
-                  className="btn-outline text-sm"
-                  title="Volver a la exploración anterior"
-                >
-                  ← Volver
-                </button>
-              )}
 
               {/* Menu de usuario */}
               {isAuthenticated && user && (

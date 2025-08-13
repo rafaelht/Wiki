@@ -147,7 +147,7 @@ class ApiClient {
   }
 
   // Métodos de búsqueda
-  async searchArticles(term: string, limit: number = 10): Promise<SearchResponse> {
+  async searchArticles(term: string, limit: number = 6): Promise<SearchResponse> {
     const response = await this.client.get<SearchResponse>('/api/search', {
       params: { term, limit }
     });

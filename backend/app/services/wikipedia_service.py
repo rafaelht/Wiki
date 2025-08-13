@@ -83,12 +83,18 @@ class WikipediaService:
                 data = response.json()
                 search_results = data.get("query", {}).get("search", [])
                 
-                # Procesar resultados para obtener información adicional
+                # Procesar resultados de forma rápida (solo títulos y datos básicos)
                 articles = []
                 for result in search_results:
-                    article = await self._get_article_summary(result["title"])
-                    if article:
-                        articles.append(article)
+                    article = {
+                        "title": result.get("title", ""),
+                        "summary": "", # No obtener resumen para búsqueda rápida
+                        "url": f"https://en.wikipedia.org/wiki/{quote(result.get('title', '').replace(' ', '_'))}",
+                        "page_id": result.get("pageid"),
+                        "word_count": result.get("wordcount", 0),
+                        "size": result.get("size", 0)
+                    }
+                    articles.append(article)
                 
                 # Guardar en caché
                 if len(self._search_cache) < self._cache_max_size:

@@ -39,6 +39,7 @@ interface GraphStore {
   exploreFromNode: (articleTitle: string, depth?: number, maxNodes?: number) => Promise<void>;
   expandSelectedNode: (depth?: number) => Promise<void>;
   expandNode: (nodeId: string, depth?: number) => Promise<void>;
+  expandNodeSilently: (nodeId: string, depth?: number) => Promise<boolean>;
   searchArticles: (term: string, limit?: number) => Promise<WikipediaArticle[]>;
   saveCurrentExploration: (name: string, description?: string, tags?: string[]) => Promise<void>;
   loadExploration: (explorationId: string) => Promise<void>;
@@ -152,6 +153,42 @@ export const useGraphStore = create<GraphStore>()(
           setError(message);
         } finally {
           setLoading(false);
+        }
+      },
+
+      expandNodeSilently: async (nodeId, depth = 1) => {
+        const { currentGraph, setCurrentGraph } = get();
+        
+        if (!currentGraph) {
+          return false;
+        }
+
+        try {
+          // Verificar si el nodo ya tiene suficientes conexiones
+          const nodeConnections = currentGraph.edges.filter(edge => 
+            edge.from_node === nodeId || edge.to_node === nodeId
+          ).length;
+          
+          // Si ya tiene muchas conexiones, no expandir
+          if (nodeConnections >= 5) {
+            return false;
+          }
+          
+          const expandedGraph = await api.expand(currentGraph, nodeId, depth);
+          
+          // Solo actualizar si realmente se agregaron nodos/edges
+          const addedNodes = expandedGraph.total_nodes - currentGraph.total_nodes;
+          const addedEdges = expandedGraph.total_edges - currentGraph.total_edges;
+          
+          if (addedNodes > 0 || addedEdges > 0) {
+            setCurrentGraph(expandedGraph);
+            return true;
+          }
+          
+          return false;
+        } catch (error) {
+          console.warn('Error en expansión silenciosa:', error);
+          return false;
         }
       },
 
@@ -309,6 +346,7 @@ export const useSavedExplorations = () => useGraphStore((state) => state.savedEx
 export const useGraphActions = () => useGraphStore((state) => ({
   exploreFromNode: state.exploreFromNode,
   expandNode: state.expandNode,
+  expandNodeSilently: state.expandNodeSilently,
   expandSelectedNode: state.expandSelectedNode,
   searchArticles: state.searchArticles,
   saveCurrentExploration: state.saveCurrentExploration,

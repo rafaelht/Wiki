@@ -22,6 +22,7 @@ export function ExplorerPage() {
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
+  const [expandingNodes, setExpandingNodes] = useState<Set<string>>(new Set());
   
   const location = useLocation();
 
@@ -32,7 +33,9 @@ export function ExplorerPage() {
     error,
     exploreFromNode,
     saveCurrentExploration,
-    setCurrentGraph
+    setCurrentGraph,
+    expandNode,
+    expandNodeSilently
   } = useGraphStore();
 
   // Estado del store de autenticación
@@ -78,10 +81,58 @@ export function ExplorerPage() {
   };
 
   // Manejar clic en nodo del grafo
-  const handleNodeClick = (node: GraphNode) => {
+  const handleNodeClick = async (node: GraphNode) => {
     console.log('Node clicked:', node);
     setSelectedNode(node);
     setShowPreview(true);
+    
+    // Expansión dinámica silenciosa: expandir el nodo en segundo plano
+    if (currentGraph && node.id && !expandingNodes.has(node.id)) {
+      // Marcar temporalmente para evitar clicks múltiples
+      setExpandingNodes(prev => new Set(prev).add(node.id));
+      
+      // Expandir silenciosamente sin mostrar loading ni toasts
+      try {
+        await expandNodeSilently(node.id, 1);
+      } catch (error) {
+        console.warn('Error en expansión silenciosa:', error);
+      } finally {
+        // Remover del estado después de un breve delay
+        setTimeout(() => {
+          setExpandingNodes(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(node.id);
+            return newSet;
+          });
+        }, 1000);
+      }
+    }
+  };
+
+  // Manejar expansión manual desde el panel de detalles
+  const handleManualExpand = async (nodeId: string, depth: number) => {
+    if (!currentGraph || expandingNodes.has(nodeId)) {
+      return;
+    }
+    
+    try {
+      // Marcar el nodo como expandiéndose
+      setExpandingNodes(prev => new Set(prev).add(nodeId));
+      
+      await expandNode(nodeId, depth);
+      
+      toast.success(`Nodo expandido con profundidad ${depth}`);
+    } catch (error) {
+      console.error('Error expandiendo nodo:', error);
+      // El error ya se maneja en el store con toast
+    } finally {
+      // Remover el nodo del estado de expansión
+      setExpandingNodes(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(nodeId);
+        return newSet;
+      });
+    }
   };
 
   // Cerrar panel de preview
@@ -330,6 +381,8 @@ export function ExplorerPage() {
                   node={selectedNode}
                   isVisible={showPreview}
                   onClose={handleClosePreview}
+                  onExpand={handleManualExpand}
+                  isExpanding={selectedNode ? expandingNodes.has(selectedNode.id) : false}
                   className="h-full"
                 />
               </div>
