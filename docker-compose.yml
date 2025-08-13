@@ -1,0 +1,111 @@
+version: '3.8'
+
+services:
+  # Base de datos MongoDB
+  mongodb:
+    image: mongo:5.0
+    container_name: wiki_graph_mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: wikipedia_graph_explorer
+    volumes:
+      - mongodb_data:/data/db
+      - ./scripts/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    networks:
+      - wiki_graph_network
+
+  # Backend FastAPI
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: wiki_graph_backend
+    restart: unless-stopped
+    ports:
+      - "8001:8000"
+    environment:
+      # Base de datos
+      MONGODB_URL: mongodb://admin:password123@mongodb:27017/wikipedia_graph_explorer?authSource=admin
+      DATABASE_NAME: wikipedia_graph_explorer
+      
+      # Configuración del servidor
+      HOST: 0.0.0.0
+      PORT: 8000
+      DEBUG: "false"
+      
+      # Configuración de logging
+      LOG_LEVEL: INFO
+      
+      # Configuración de la aplicación
+      MAX_GRAPH_NODES: 200
+      MAX_GRAPH_DEPTH: 3
+      REQUEST_TIMEOUT: 30
+      
+      # Configuración de Wikipedia API
+      WIKIPEDIA_USER_AGENT: "Wikipedia-Graph-Explorer/1.0 (Educational Purpose)"
+      WIKIPEDIA_TIMEOUT: 30
+    depends_on:
+      - mongodb
+    networks:
+      - wiki_graph_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Frontend React
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: http://localhost:8001
+    container_name: wiki_graph_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - wiki_graph_network
+
+# Volúmenes persistentes
+volumes:
+  mongodb_data:
+    driver: local
+
+# Red personalizada
+networks:
+  wiki_graph_network:
+    driver: bridge
+
+# Configuración adicional para desarrollo
+x-development-overrides:
+  backend-dev: &backend-dev
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./backend/app:/app/app
+    environment:
+      DEBUG: "true"
+      LOG_LEVEL: DEBUG
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  frontend-dev: &frontend-dev
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+    environment:
+      VITE_API_BASE_URL: http://localhost:8001
+    command: ["npm", "run", "dev", "--", "--host"]
+    ports:
+      - "3000:3000"

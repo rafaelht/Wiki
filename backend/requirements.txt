@@ -1,0 +1,49 @@
+# Wikipedia Graph Explorer - Backend Dependencies
+
+# FastAPI y servidor
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+
+# Base de datos
+motor==3.3.1
+pymongo==4.5.0
+
+# Cliente HTTP para Wikipedia API
+httpx==0.25.1
+aiohttp==3.8.6
+
+# Procesamiento de datos
+pydantic==2.4.2
+pydantic-settings==2.0.3
+
+# Parsing HTML/XML
+beautifulsoup4==4.12.2
+lxml==4.9.3
+
+# Utilidades
+python-multipart==0.0.6
+python-dotenv==1.0.0
+
+# Logging y monitoreo
+structlog==23.2.0
+
+# Testing (desarrollo)
+pytest==7.4.3
+pytest-asyncio==0.21.1
+httpx==0.25.1
+
+# Análisis de grafos (opcional)
+networkx==3.2.1
+
+# Validación y serialización
+email-validator==2.1.0
+
+# Seguridad
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# Manejo de fechas
+python-dateutil==2.8.2
+
+# Variables de entorno
+python-decouple==3.8
