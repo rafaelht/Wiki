@@ -20,8 +20,8 @@ router = APIRouter()
 @router.get("/explore/{article_title}", response_model=ExploreResponse)
 async def explore_graph(
     article_title: str = Path(..., description="Título del artículo raíz para explorar"),
-    depth: int = Query(1, ge=1, le=3, description="Profundidad de exploración (1-3)"),
-    max_nodes: Optional[int] = Query(None, ge=10, le=200, description="Número máximo de nodos en el grafo")
+    depth: int = Query(2, ge=1, le=3, description="Profundidad de exploración (1-3)"),
+    max_nodes: Optional[int] = Query(30, ge=10, le=200, description="Número máximo de nodos en el grafo")
 ) -> ExploreResponse:
     """
     Explora el grafo de conocimiento desde un artículo raíz

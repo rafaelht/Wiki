@@ -25,8 +25,9 @@ class GraphService:
     """
     
     def __init__(self):
-        self.max_nodes_per_depth = 8  # Límite de nodos por nivel de profundidad
-        self.max_total_nodes = 100     # Límite total de nodos en el grafo
+        self.max_nodes_per_depth = 5  # Límite más agresivo para velocidad inicial
+        self.max_total_nodes = 30     # Límite inicial más bajo para rapidez
+        self._node_cache = {}         # Caché en memoria para nodos ya procesados
     
     async def explore_graph(self, 
                           root_article: str, 
@@ -59,8 +60,8 @@ class GraphService:
         
         try:
             while exploration_queue and len(nodes) < self.max_total_nodes:
-                # Procesar artículos por lotes para mejorar rendimiento
-                batch_size = min(10, len(exploration_queue))  # Procesar hasta 10 artículos a la vez
+                # Procesar artículos por lotes más grandes para mejorar rendimiento
+                batch_size = min(15, len(exploration_queue))  # Aumentado de 10 a 15
                 current_batch = []
                 
                 # Extraer lote de artículos de la cola
@@ -76,6 +77,13 @@ class GraphService:
                     
                     # Evitar procesar el mismo artículo múltiples veces
                     if current_article in visited:
+                        continue
+                    
+                    # Verificar caché antes de procesar
+                    if current_article in self._node_cache:
+                        nodes[current_article] = self._node_cache[current_article]
+                        visited.add(current_article)
+                        logger.debug(f"Usando caché para: {current_article}")
                         continue
                     
                     visited.add(current_article)
@@ -108,12 +116,16 @@ class GraphService:
                     )
                     nodes[current_article] = node
                     
+                    # Guardar en caché para futuros usos
+                    self._node_cache[current_article] = node
+                    
                     # Procesar enlaces si no hemos alcanzado la profundidad máxima
                     if current_depth + 1 <= depth and len(nodes) < self.max_total_nodes:
                         links = article_data.get("links", [])
                         
-                        # Limitar número de enlaces por nodo
-                        links = links[:self.max_nodes_per_depth]
+                        # Límite más agresivo de enlaces por nodo para mejor rendimiento
+                        max_links = max(3, self.max_nodes_per_depth - 2)
+                        links = links[:max_links]
                         
                         for linked_article in links:
                             # Crear arista

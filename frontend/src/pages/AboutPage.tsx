@@ -27,7 +27,7 @@ export function AboutPage() {
       { name: 'Pydantic', description: 'Validación de datos con type hints' }
     ],
     frontend: [
-      { name: 'React 18', description: 'Biblioteca para interfaces de usuario' },
+      { name: 'React', description: 'Biblioteca para interfaces de usuario' },
       { name: 'TypeScript', description: 'Superset tipado de JavaScript' },
       { name: 'Vite', description: 'Herramienta de build ultrarrápida' },
       { name: 'Tailwind CSS', description: 'Framework CSS utility-first' },
@@ -88,7 +88,7 @@ export function AboutPage() {
       icon: <GitBranch className="h-6 w-6" />,
       title: 'Visualización Interactiva',
       description: 'Grafo interactivo con zoom, pan y selección de nodos',
-      status: '🔄 En desarrollo'
+      status: '✅ Completo'
     }
   ];
 

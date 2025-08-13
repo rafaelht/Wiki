@@ -79,7 +79,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
       if (!isTyping && !isLoading) {
         clearGraph();
         try {
-          await exploreFromNode(article.title);
+          await exploreFromNode(article.title, 2, 30); // Optimizado: profundidad 2, máximo 30 nodos
         } catch (err) {
           setError(err instanceof Error ? err.message : 'Failed to build graph');
         }
@@ -162,7 +162,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
       {graphLoading && (
         <div className="mt-2 text-sm text-blue-600 flex items-center">
           <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-          Building graph...
+        
         </div>
       )}
     </div>

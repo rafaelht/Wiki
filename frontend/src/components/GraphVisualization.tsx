@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Network } from 'vis-network';
 import { DataSet } from 'vis-data';
 import { GraphVisualizationProps, GraphNode, GraphEdge } from '../types';
-import { ZoomIn, ZoomOut, RotateCcw, Maximize2, Info } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw, Maximize2, Info, Eye } from 'lucide-react';
 
 interface GraphVisualizationComponentProps extends GraphVisualizationProps {
   className?: string;
@@ -197,6 +197,10 @@ const GraphVisualization: React.FC<GraphVisualizationComponentProps> = ({
         const nodeId = event.nodes[0];
         const node = displayData.nodes.find((n: GraphNode) => n.id === nodeId);
         if (node) {
+          // Centrar y hacer zoom al nodo seleccionado
+          focusOnNode(nodeId);
+          
+          // Llamar al callback original si existe
           onNodeClick?.(node);
         }
       } else if (event.edges.length > 0) {
@@ -207,6 +211,9 @@ const GraphVisualization: React.FC<GraphVisualizationComponentProps> = ({
         if (edge) {
           onEdgeClick?.(edge);
         }
+      } else {
+        // Clic en el fondo: resetear resaltado
+        resetHighlight();
       }
     });
 
@@ -249,6 +256,134 @@ const GraphVisualization: React.FC<GraphVisualizationComponentProps> = ({
   const resetView = () => {
     if (networkRef.current) {
       networkRef.current.fit();
+    }
+  };
+
+  // Nueva función para centrar y hacer zoom a un nodo específico
+  const focusOnNode = (nodeId: string) => {
+    if (!networkRef.current) return;
+
+    try {
+      // Obtener conexiones del nodo
+      const connectedNodes = networkRef.current.getConnectedNodes(nodeId);
+      const connectedEdges = networkRef.current.getConnectedEdges(nodeId);
+      const allNodes = [nodeId, ...connectedNodes];
+
+      // Resaltar nodo y sus conexiones
+      const visData = transformDataForVis();
+      
+      // Actualizar nodos con resaltado
+      const updatedNodes = visData.nodes.map((node: any) => {
+        if (node.id === nodeId) {
+          // Nodo seleccionado: más grande y color especial
+          return {
+            ...node,
+            color: {
+              background: '#ff6b6b',
+              border: '#e55353',
+              highlight: {
+                background: '#ff5252',
+                border: '#d32f2f'
+              }
+            },
+            size: 35,
+            borderWidth: 4,
+            font: { ...node.font, size: 14, color: '#000' }
+          };
+        } else if (allNodes.includes(node.id)) {
+          // Nodos conectados: resaltados
+          return {
+            ...node,
+            color: {
+              background: '#4ecdc4',
+              border: '#45b7aa',
+              highlight: {
+                background: '#26a69a',
+                border: '#00695c'
+              }
+            },
+            size: 25,
+            borderWidth: 3,
+            font: { ...node.font, size: 12, color: '#000' }
+          };
+        } else {
+          // Otros nodos: atenuados
+          return {
+            ...node,
+            color: {
+              background: '#e3e3e3',
+              border: '#c0c0c0',
+              highlight: {
+                background: '#e3e3e3',
+                border: '#c0c0c0'
+              }
+            },
+            opacity: 0.3,
+            font: { ...node.font, color: '#999' }
+          };
+        }
+      });
+
+      // Actualizar aristas con resaltado
+      const updatedEdges = visData.edges.map((edge: any) => {
+        if (connectedEdges.includes(edge.id || `${edge.from}-${edge.to}`)) {
+          // Aristas conectadas: resaltadas
+          return {
+            ...edge,
+            color: {
+              color: '#ff6b6b',
+              highlight: '#e55353'
+            },
+            width: 3,
+            shadow: true
+          };
+        } else {
+          // Otras aristas: atenuadas
+          return {
+            ...edge,
+            color: {
+              color: '#e0e0e0',
+              highlight: '#e0e0e0'
+            },
+            width: 1,
+            opacity: 0.3
+          };
+        }
+      });
+
+      // Actualizar datos del grafo
+      networkRef.current.setData({ 
+        nodes: new DataSet(updatedNodes), 
+        edges: new DataSet(updatedEdges)
+      });
+
+      // Centrar vista en el nodo y hacer zoom
+      networkRef.current.focus(nodeId, {
+        scale: 1.5,
+        animation: {
+          duration: 800,
+          easingFunction: 'easeInOutQuad'
+        }
+      });
+
+      console.log(`🎯 Centrado en nodo: ${nodeId}, conexiones: ${connectedNodes.length} nodos, ${connectedEdges.length} aristas`);
+    } catch (error) {
+      console.error('Error al centrar en el nodo:', error);
+    }
+  };
+
+  // Nueva función para resetear el resaltado
+  const resetHighlight = () => {
+    if (!networkRef.current) return;
+
+    try {
+      // Restaurar datos originales
+      const visData = transformDataForVis();
+      networkRef.current.setData(visData);
+      
+      console.log('🔄 Resaltado reseteado');
+    } catch (error) {
+      console.error('Error al resetear resaltado:', error);
     }
   };
 
@@ -316,6 +451,13 @@ const GraphVisualization: React.FC<GraphVisualizationComponentProps> = ({
             title="Reiniciar vista"
           >
             <RotateCcw size={16} />
+          </button>
+          <button
+            onClick={resetHighlight}
+            className="p-2 bg-white rounded-lg shadow-md hover:bg-gray-50 transition-colors"
+            title="Quitar resaltado"
+          >
+            <Eye size={16} />
           </button>
           <button
             onClick={toggleFullscreen}

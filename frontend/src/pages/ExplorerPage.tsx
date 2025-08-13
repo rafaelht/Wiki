@@ -58,13 +58,13 @@ export function ExplorerPage() {
   const handleArticleSelect = async (article: WikipediaArticle) => {
     try {
       console.log('Exploring article:', article.title);
-      await exploreFromNode(article.title, 3, 50); // Aumentada la profundidad a 3
+      await exploreFromNode(article.title, 2, 30); // Optimizado: profundidad 2, máximo 30 nodos
       toast.success(`Explorando "${article.title}"`);
       
       // Recordatorio para usuarios invitados
       if (isGuest) {
         setTimeout(() => {
-          toast('💡 Tip: Crea una cuenta para guardar tus exploraciones', {
+          toast('Tip: Crea una cuenta para guardar tus exploraciones', {
             duration: 6000,
             style: {
               background: '#fef3c7',
@@ -342,16 +342,16 @@ export function ExplorerPage() {
               Grafo de Conocimiento
             </h3>
             <div className="flex items-center space-x-6 text-sm text-gray-600">
-              <span>📊 {currentGraph.total_nodes} nodos</span>
-              <span>🔗 {currentGraph.total_edges} conexiones</span>
-              <span>📈 Profundidad: {currentGraph.max_depth}</span>
+              <span> {currentGraph.total_nodes} nodos</span>
+              <span> {currentGraph.total_edges} conexiones</span>
+              <span> Profundidad: {currentGraph.max_depth}</span>
             </div>
             
             {/* Mostrar información de exploración cargada */}
             {location.state?.loadedExploration && (
               <div className="mt-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg inline-block">
                 <span className="text-blue-800 text-sm font-medium">
-                  📁 Exploración cargada: {(location.state as any).loadedExploration.name}
+                  Exploración cargada: {(location.state as any).loadedExploration.name}
                 </span>
               </div>
             )}

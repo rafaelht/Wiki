@@ -62,7 +62,7 @@ export function DeleteConfirmationModal({
           {/* Exploration details */}
           <div className="bg-gray-50 rounded-lg p-4 mb-6">
             <h4 className="font-medium text-gray-900 mb-2">
-              📁 {exploration.name}
+              {exploration.name}
             </h4>
             {exploration.description && (
               <p className="text-gray-600 text-sm mb-3">

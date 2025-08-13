@@ -37,7 +37,9 @@ class WikipediaService:
         # Caché en memoria para mejorar rendimiento
         self._search_cache = {}
         self._article_cache = {}
-        self._cache_max_size = 1000
+        self._cache_max_size = 2000  # Aumentado para mejor rendimiento
+        self._cache_hits = 0
+        self._cache_misses = 0
     
     async def search_articles(self, 
                             query: str, 
@@ -381,7 +383,11 @@ class WikipediaService:
         """
         # Verificar caché primero
         if title in self._article_cache:
+            self._cache_hits += 1
+            logger.debug(f"Cache hit para {title} (hits: {self._cache_hits}, misses: {self._cache_misses})")
             return self._article_cache[title]
+        
+        self._cache_misses += 1
         
         try:
             # Obtener resumen y enlaces en paralelo
@@ -394,11 +400,20 @@ class WikipediaService:
                 logger.warning(f"No se pudo obtener resumen para {title}")
                 return None
             
-            # Combinar información
-            summary["links"] = links
-            summary["link_count"] = len(links)
+            # Combinar información - limitar enlaces para mejor rendimiento
+            filtered_links = links[:15] if links else []  # Máximo 15 enlaces por artículo
+            summary["links"] = filtered_links
+            summary["link_count"] = len(filtered_links)
             
-            logger.info(f"Contenido obtenido para {title}: {len(links)} enlaces encontrados")
+            # Guardar en caché con límite de tamaño
+            if len(self._article_cache) >= self._cache_max_size:
+                # Remover elementos más antiguos (simple FIFO)
+                oldest_key = next(iter(self._article_cache))
+                del self._article_cache[oldest_key]
+            
+            self._article_cache[title] = summary
+            
+            logger.debug(f"Contenido obtenido para {title}: {len(filtered_links)} enlaces (cache miss: {self._cache_misses})")
             
             # Guardar en caché
             if len(self._article_cache) < self._cache_max_size:

@@ -101,17 +101,24 @@ export const useGraphStore = create<GraphStore>()(
           setLoading(true);
           setError(null);
           
+          // Mostrar progreso inmediato
+          toast(`🔍 Explorando "${articleTitle}"...`, { duration: 2000 });
+          
+          const startTime = Date.now();
           const response = await api.explore(articleTitle, depth, maxNodes);
+          const endTime = Date.now();
+          const duration = ((endTime - startTime) / 1000).toFixed(1);
           
           setCurrentGraph(response.graph_data);
           addToHistory(articleTitle);
           
           toast.success(
-            `Grafo explorado: ${response.graph_data.total_nodes} nodos, ${response.graph_data.total_edges} conexiones`
+            `✅ Grafo explorado en ${duration}s: ${response.graph_data.total_nodes} nodos, ${response.graph_data.total_edges} conexiones`
           );
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Error explorando el grafo';
           setError(message);
+          toast.error(`❌ ${message}`);
         } finally {
           setLoading(false);
         }
@@ -138,7 +145,13 @@ export const useGraphStore = create<GraphStore>()(
           setLoading(true);
           setError(null);
           
+          // Mostrar progreso inmediato para expansión
+          toast(`🔍 Expandiendo nodo "${nodeId}"...`, { duration: 1500 });
+          
+          const startTime = Date.now();
           const expandedGraph = await api.expand(currentGraph, nodeId, depth);
+          const endTime = Date.now();
+          const duration = ((endTime - startTime) / 1000).toFixed(1);
           
           setCurrentGraph(expandedGraph);
           
@@ -146,11 +159,12 @@ export const useGraphStore = create<GraphStore>()(
           const addedEdges = expandedGraph.total_edges - currentGraph.total_edges;
           
           toast.success(
-            `Nodo expandido: +${addedNodes} nodos, +${addedEdges} conexiones`
+            `✅ Expansión completada en ${duration}s: +${addedNodes} nodos, +${addedEdges} conexiones`
           );
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Error expandiendo el nodo';
           setError(message);
+          toast.error(`❌ ${message}`);
         } finally {
           setLoading(false);
         }
