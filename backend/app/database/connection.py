@@ -40,27 +40,14 @@ class DatabaseManager:
             database_name = os.getenv("DATABASE_NAME", "wikipedia_graph_explorer")
             
             try:
-                # Configuración SSL/TLS optimizada para producción (Render + Atlas)
+                # Configuración básica para MongoDB local
                 connection_options = {
-                    "tls": True,                         # Habilitar TLS
-                    "serverSelectionTimeoutMS": 30000,  # 30 segundos timeout
-                    "connectTimeoutMS": 30000,           # 30 segundos para conectar
-                    "socketTimeoutMS": 45000,            # 45 segundos para operaciones
-                    "maxPoolSize": 10,                   # Máximo 10 conexiones en el pool
-                    "minPoolSize": 1,                    # Mínimo 1 conexión en el pool
-                    "retryWrites": True,                 # Reintentar escrituras
-                    "w": "majority",                     # Write concern
+                    "serverSelectionTimeoutMS": 5000,   # 5 segundos timeout
+                    "connectTimeoutMS": 10000,          # 10 segundos para conectar
+                    "socketTimeoutMS": 20000,           # 20 segundos para operaciones
+                    "maxPoolSize": 50,                  # Máximo 50 conexiones en el pool
+                    "minPoolSize": 10,                  # Mínimo 10 conexiones en el pool
                 }
-                
-                # Configuración SSL adicional para Atlas en producción
-                if "mongodb+srv://" in mongodb_url:
-                    import certifi
-                    connection_options.update({
-                        "tlsCAFile": certifi.where(),    # Usar certificados de certifi
-                        "tlsAllowInvalidCertificates": False,  # Validar certificados
-                        "tlsAllowInvalidHostnames": False,     # Validar hostnames
-                        "authSource": "admin",           # Fuente de autenticación
-                    })
                 
                 # Crear cliente de MongoDB
                 self._client = AsyncIOMotorClient(mongodb_url, **connection_options)

@@ -7,7 +7,7 @@ El error SSL que estás viendo es causado por:
 2. **Configuración SSL incompleta** para Atlas en Render
 3. **Variables de entorno faltantes** para certificados SSL
 
-## ✅ Solución Paso a Paso
+## ✅ Solución Paso a Paso (Actualizada)
 
 ### 1. Actualizar dependencias en Render
 
@@ -24,13 +24,33 @@ certifi==2023.11.17
 
 | Variable | Valor |
 |----------|-------|
-| `MONGODB_URL` | `mongodb+srv://wiki:Ieu3REQOvv9frZK4@cluster0.3c9l9sw.mongodb.net/wikipedia_graph_explorer?retryWrites=true&w=majority&appName=Cluster0&tls=true&authSource=admin` |
+| `MONGODB_URL` | `mongodb+srv://wiki:Ieu3REQOvv9frZK4@cluster0.3c9l9sw.mongodb.net/wikipedia_graph_explorer?retryWrites=true&w=majority&appName=Cluster0&ssl=false` |
 | `DATABASE_NAME` | `wikipedia_graph_explorer` |
 | `BACKEND_PORT` | `8000` |
 | `JWT_SECRET_KEY` | `your-super-secret-jwt-key-change-this-in-production` |
 | `LOG_LEVEL` | `INFO` |
 
-### 3. Verificar configuración de Build en Render
+**⚠️ IMPORTANTE:** Para Render, usa `&ssl=false` en la URL para evitar problemas SSL específicos de este entorno.
+
+### 2.1. URL Alternativa (si ssl=false no funciona)
+
+Si el problema persiste, prueba esta URL más básica:
+
+```
+mongodb+srv://wiki:Ieu3REQOvv9frZK4@cluster0.3c9l9sw.mongodb.net/wikipedia_graph_explorer?retryWrites=true&w=majority
+```
+
+### 3. Nueva configuración SSL específica para Render
+
+El código ahora detecta automáticamente si está ejecutándose en Render y aplica una configuración SSL menos restrictiva que evita los errores TLSV1_ALERT_INTERNAL_ERROR.
+
+**Características de la nueva configuración:**
+- **SSL sin verificación estricta de certificados**
+- **Timeouts extendidos** (60 segundos) para Render
+- **Pool de conexiones conservador** (máximo 5 conexiones)
+- **Detección automática del entorno** Render
+
+### 4. Verificar configuración de Build en Render
 
 **Build Command:**
 ```bash
