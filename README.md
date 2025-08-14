@@ -1,28 +1,9 @@
 # Wikipedia Graph Expl**U**U```
 
-**URL-**URLs después del inicio:**
+**URLs:**
 - **Aplicación**: http://localhost:3000
 - **API**: http://localhost:8001
 - **Docs API**: http://localhost:8001/docs
-
-## Stack Tecnológicoicación**: http://localhost:3000
-- **API**: http://localhost:8001
-- **Docs API**: http://localhost:8001/docsespués del inicio:**
-- **Aplicación**: http://localhost:3000
-- **API**: http://localhost:8001
-- **Docs API**: http://localhost:8001/docs
-
-## Stack Tecnológicoués del inicio:**
-- **Aplicación**: http://localhost:3000
-- **API**: http://localhost:8001
-- **Docs API**: http://localhost:8001/docs
-
-## Stack Tecnológicospués del inicio:**
-- **Aplicación**: http://localhost:3000
-- **API**: http://localhost:8001
-- **Docs API**: http://localhost:8001/docs
-
-## Stack TecnológicoUn explorador de conocimiento que transforma artículos de Wikipedia en un grafo interactivo, mostrando las conexiones entre conceptos.
 
 ## ¿Qué hace esta aplicación?
 
@@ -37,16 +18,10 @@
 
 ```bash
 # Clonar y ejecutar con un comando
-git clone <tu-repositorio>
+git clone <https://github.com/rafaelht/Wiki.git>
 cd Wiki
 ./start.sh
 ```
-
-**URLs después del inicio:**
-- 🖥️ **Aplicación**: http://localhost:3000
-- � **API**: http://localhost:8001
-- � **Docs API**: http://localhost:8001/docs
-
 ## �️ Stack Tecnológico
 
 ### Backend
@@ -118,14 +93,14 @@ Wiki/
 ```javascript
 {
   "_id": ObjectId("..."),
-  "email": "usuario@ejemplo.com",
-  "username": "usuario123",
+  "email": "mail",
+  "username": "user",
   "full_name": "Nombre Completo",
-  "password_hash": "$2b$12$...", // Hash bcrypt
+  "password_hash": "pass", // Hash bcrypt
   "is_active": true,
   "role": "user", // "guest" | "user" | "admin"
-  "created_at": ISODate("2025-08-13T10:30:00Z"),
-  "updated_at": ISODate("2025-08-13T10:30:00Z")
+  "created_at": ISODate("date"),
+  "updated_at": ISODate("date")
 }
 
 // Índices:
@@ -183,40 +158,6 @@ Wiki/
   "updated_at": ISODate("2025-08-13T10:30:00Z")
 }
 
-// Índices:
-// - user_id
-// - name
-// - root_node  
-// - tags
-// - created_at
-// - {created_at: -1, name: 1} (compuesto para paginación)
-```
-
-### **Colección: `articles_cache`**
-```javascript
-{
-  "_id": ObjectId("..."),
-  "page_id": 25402, // ID único de Wikipedia
-  "title": "Quantum_mechanics",
-  "summary": "Fundamental theory in physics that provides...",
-  "url": "https://en.wikipedia.org/wiki/Quantum_mechanics",
-  "image_url": "https://upload.wikimedia.org/...",
-  "links": [
-    "Wave_function",
-    "Schrödinger_equation", 
-    "Heisenberg_uncertainty_principle"
-  ],
-  "cached_at": ISODate("2025-08-13T10:30:00Z"),
-  "expires_at": ISODate("2025-08-20T10:30:00Z"), // TTL de 7 días
-  "link_count": 156,
-  "language": "en"
-}
-
-// Índices:
-// - page_id (único)
-// - title (único)
-// - cached_at
-// - expires_at (TTL index)
 ```
 
 ### **Configuración de Base de Datos**
@@ -228,16 +169,7 @@ Wiki/
 
 ## Comandos Útiles
 
-```bash
-# Desarrollo manual
-cd backend && source venv/bin/activate && python -m uvicorn app.main:app --reload
-cd frontend && npm run dev
-
-# Ver logs del backend
-tail -f backend/app.log
-
-# Limpiar datos
-rm -rf backend/__pycache__ frontend/node_modules/.cache
+```
 ```
 
 ## Características Técnicas Destacadas
@@ -259,17 +191,6 @@ rm -rf backend/__pycache__ frontend/node_modules/.cache
 - **Estados de carga**: Indicadores visuales durante operaciones
 - **Manejo de errores**: Mensajes informativos y recuperación automática
 - **Accesibilidad**: Atajos de teclado y navegación clara
-
-## Demostración del Proyecto
-
-Este proyecto demuestra:
-
-1. **Arquitectura Full-Stack** moderna y escalable
-2. **Integración de APIs** complejas (Wikipedia)
-3. **Visualización de datos** interactiva
-4. **Gestión de estado** avanzada con persistencia
-5. **Algoritmos de grafos** aplicados a problemas reales
-6. **UX/UI** pulida con feedback inmediato
 
 ---
 
