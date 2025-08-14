@@ -18,7 +18,8 @@ import {
   ExternalLink,
   User,
   LogOut,
-  ChevronDown
+  ChevronDown,
+  LogIn
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import clsx from 'clsx';
@@ -39,7 +40,7 @@ export function Layout({ children }: LayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const location = useLocation();
-  const { user, isAuthenticated, logout } = useAuthStore();
+  const { user, isAuthenticated, logout, isGuest } = useAuthStore();
 
   const navigationItems: NavigationItem[] = [
     {
@@ -65,7 +66,7 @@ export function Layout({ children }: LayoutProps) {
 
   // Filtrar elementos según el estado de autenticación
   const visibleNavigationItems = navigationItems.filter(item => {
-    if (item.requiresAuth && (!isAuthenticated || user?.role === 'guest')) {
+    if (item.requiresAuth && (!isAuthenticated || isGuest)) {
       return false;
     }
     return true;
@@ -142,6 +143,17 @@ export function Layout({ children }: LayoutProps) {
 
             {/* Actions */}
             <div className="flex items-center space-x-3">
+              
+              {/* Botón de login para usuarios invitados */}
+              {isGuest && (
+                <Link
+                  to="/login"
+                  className="flex items-center space-x-2 px-3 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  <LogIn size={16} />
+                  <span className="hidden sm:block">Iniciar Sesión</span>
+                </Link>
+              )}
 
               {/* Menu de usuario */}
               {isAuthenticated && user && (
@@ -240,29 +252,60 @@ export function Layout({ children }: LayoutProps) {
               </nav>
 
             {/* User info and logout for mobile */}
-            {isAuthenticated && user && (
+            {(isAuthenticated || isGuest) && (
               <div className="p-4 border-t border-gray-200">
-                <div className="flex items-center space-x-3 mb-3">
-                  <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-                    <User size={16} className="text-primary-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {user.full_name || user.username}
-                    </p>
-                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => {
-                    logout();
-                    setIsSidebarOpen(false);
-                  }}
-                  className="flex items-center space-x-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                >
-                  <LogOut size={16} />
-                  <span>Cerrar sesión</span>
-                </button>
+                {/* Botón de login para usuarios invitados en móvil */}
+                {isGuest && (
+                  <Link
+                    to="/login"
+                    onClick={() => setIsSidebarOpen(false)}
+                    className="flex items-center space-x-2 w-full px-3 py-2 mb-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-medium transition-colors justify-center"
+                  >
+                    <LogIn size={16} />
+                    <span>Iniciar Sesión</span>
+                  </Link>
+                )}
+                
+                {/* Solo mostrar info de usuario si está autenticado y no es invitado */}
+                {isAuthenticated && !isGuest && user && (
+                  <>
+                    <div className="flex items-center space-x-3 mb-3">
+                      <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
+                        <User size={16} className="text-primary-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {user.full_name || user.username}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        logout();
+                        setIsSidebarOpen(false);
+                      }}
+                      className="flex items-center space-x-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <LogOut size={16} />
+                      <span>Cerrar sesión</span>
+                    </button>
+                  </>
+                )}
+                
+                {/* Botón de logout para invitados */}
+                {isGuest && (
+                  <button
+                    onClick={() => {
+                      logout();
+                      setIsSidebarOpen(false);
+                    }}
+                    className="flex items-center space-x-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  >
+                    <LogOut size={16} />
+                    <span>Salir del modo invitado</span>
+                  </button>
+                )}
               </div>
             )}
 

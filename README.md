@@ -22,7 +22,7 @@ git clone <https://github.com/rafaelht/Wiki.git>
 cd Wiki
 ./start.sh
 ```
-## �️ Stack Tecnológico
+## Stack Tecnológico
 
 ### Backend
 - **FastAPI** - API REST con documentación automática

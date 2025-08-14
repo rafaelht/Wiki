@@ -22,6 +22,7 @@ export function ExplorerPage() {
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showClearModal, setShowClearModal] = useState(false);
   const [expandingNodes, setExpandingNodes] = useState<Set<string>>(new Set());
   
   // Ref para controlar el SearchBar
@@ -66,7 +67,6 @@ export function ExplorerPage() {
     };
 
     const handleGuest = () => {
-      console.log('👤 Modo invitado activado - mostrando pantalla de bienvenida');
       clearGraph(); // Limpiar para mostrar pantalla de bienvenida
     };
 
@@ -116,21 +116,7 @@ export function ExplorerPage() {
     try {
       console.log('Exploring article:', article.title);
       await exploreFromNode(article.title, 2, 30); // Optimizado: profundidad 2, máximo 30 nodos
-      toast.success(`Explorando "${article.title}"`);
       
-      // Recordatorio para usuarios invitados
-      if (isGuest) {
-        setTimeout(() => {
-          toast('Tip: Crea una cuenta para guardar tus exploraciones', {
-            duration: 6000,
-            style: {
-              background: '#fef3c7',
-              color: '#92400e',
-              border: '1px solid #fbbf24',
-            },
-          });
-        }, 2000);
-      }
     } catch (error) {
       console.error('Error explorando artículo:', error);
       toast.error('Error al explorar el artículo');
@@ -246,15 +232,14 @@ export function ExplorerPage() {
     const hasSignificantContent = currentGraph && currentGraph.total_nodes > 1;
     
     if (hasSignificantContent) {
-      const confirmClear = window.confirm(
-        '¿Estás seguro de que quieres limpiar el grafo actual? Se perderá toda la exploración actual.'
-      );
-      
-      if (!confirmClear) {
-        return;
-      }
+      setShowClearModal(true);
+    } else {
+      performClearGraph();
     }
-    
+  };
+
+  // Ejecutar la limpieza del grafo
+  const performClearGraph = () => {
     clearGraph();
     setSelectedNode(null);
     setShowPreview(false);
@@ -265,6 +250,17 @@ export function ExplorerPage() {
     }
     
     toast.success('Grafo limpiado. Busca un nuevo artículo para comenzar');
+  };
+
+  // Confirmar limpieza del grafo
+  const confirmClearGraph = () => {
+    setShowClearModal(false);
+    performClearGraph();
+  };
+
+  // Cancelar limpieza del grafo
+  const cancelClearGraph = () => {
+    setShowClearModal(false);
   };
 
   // Manejar compartir grafo
@@ -343,16 +339,6 @@ export function ExplorerPage() {
               >
                 <Download size={16} />
                 <span>Exportar</span>
-              </button>
-
-              <button
-                onClick={handleClearGraph}
-                className="px-4 py-2 border border-orange-300 text-orange-700 rounded-lg hover:bg-orange-50 flex items-center space-x-2 transition-colors"
-                disabled={isLoading}
-                title={`Limpiar el grafo actual (${currentGraph?.total_nodes || 0} nodos) y empezar de nuevo. Atajo: Ctrl+R`}
-              >
-                <RotateCcw size={16} />
-                <span>Limpiar</span>
               </button>
               
               <button
@@ -433,9 +419,20 @@ export function ExplorerPage() {
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           {/* Header */}
           <div className="p-6 border-b border-gray-200">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">
-              Grafo de Conocimiento
-            </h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-xl font-bold text-gray-900">
+                Grafo de Conocimiento
+              </h3>
+              <button
+                onClick={handleClearGraph}
+                className="px-3 py-1.5 border border-orange-300 text-orange-700 rounded-lg hover:bg-orange-50 flex items-center space-x-2 transition-colors text-sm"
+                disabled={isLoading}
+                title={`Limpiar el grafo actual (${currentGraph?.total_nodes || 0} nodos) y empezar de nuevo. Atajo: Ctrl+R`}
+              >
+                <RotateCcw size={14} />
+                <span>Limpiar</span>
+              </button>
+            </div>
             <div className="flex items-center space-x-6 text-sm text-gray-600">
               <span> {currentGraph.total_nodes} nodos</span>
               <span> {currentGraph.total_edges} conexiones</span>
@@ -633,6 +630,58 @@ export function ExplorerPage() {
           onClose={() => setShowSaveModal(false)}
           isLoading={isLoading}
         />
+      )}
+
+      {/* Modal para confirmar limpieza del grafo */}
+      {showClearModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+          <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            {/* Header */}
+            <div className="p-6 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Confirmar limpieza del grafo
+              </h3>
+            </div>
+            
+            {/* Content */}
+            <div className="p-6">
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0">
+                  <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                    <RotateCcw className="h-5 w-5 text-orange-600" />
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <p className="text-gray-900 mb-2">
+                    ¿Estás seguro de que quieres limpiar el grafo actual?
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Se perderá toda la exploración actual con{' '}
+                    <span className="font-medium">{currentGraph?.total_nodes || 0} nodos</span> y{' '}
+                    <span className="font-medium">{currentGraph?.total_edges || 0} conexiones</span>.
+                    Esta acción no se puede deshacer.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Actions */}
+            <div className="p-6 border-t border-gray-200 flex justify-end space-x-3">
+              <button
+                onClick={cancelClearGraph}
+                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmClearGraph}
+                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+              >
+                Sí, limpiar grafo
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -101,20 +101,11 @@ export const useGraphStore = create<GraphStore>()(
           setLoading(true);
           setError(null);
           
-          // Mostrar progreso inmediato
-          toast(`🔍 Explorando "${articleTitle}"...`, { duration: 2000 });
-          
-          const startTime = Date.now();
           const response = await api.explore(articleTitle, depth, maxNodes);
-          const endTime = Date.now();
-          const duration = ((endTime - startTime) / 1000).toFixed(1);
           
           setCurrentGraph(response.graph_data);
           addToHistory(articleTitle);
           
-          toast.success(
-            `✅ Grafo explorado en ${duration}s: ${response.graph_data.total_nodes} nodos, ${response.graph_data.total_edges} conexiones`
-          );
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Error explorando el grafo';
           setError(message);

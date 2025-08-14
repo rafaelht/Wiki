@@ -5,7 +5,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore, LoginData } from '../store/authStore';
-import toast from 'react-hot-toast';
 import { 
   LogIn, 
   Eye, 
@@ -75,10 +74,6 @@ const LoginPage: React.FC = () => {
 
     try {
       await login(formData);
-      // Small delay to ensure clean rendering
-      setTimeout(() => {
-        toast.success('¡Bienvenido/a de vuelta!');
-      }, 100);
       navigate('/');
     } catch (error) {
       // Error is handled by the store
@@ -88,9 +83,6 @@ const LoginPage: React.FC = () => {
 
   const handleGuestMode = () => {
     setGuest();
-    setTimeout(() => {
-      toast.success('Modo invitado activado');
-    }, 100);
     navigate('/');
   };
 
