@@ -93,7 +93,7 @@ const SearchBar = forwardRef<SearchBarRef, SearchBarProps>(({
       if (!isTyping && !isLoading) {
         clearGraph();
         try {
-          await exploreFromNode(article.title, 2, 30); // Optimizado: profundidad 2, máximo 30 nodos
+          await exploreFromNode(article.title, 3, 60); // Incrementado: profundidad 3, máximo 60 nodos para grafo más rico
         } catch (err) {
           setError(err instanceof Error ? err.message : 'Failed to build graph');
         }

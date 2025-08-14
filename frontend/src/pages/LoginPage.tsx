@@ -5,6 +5,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore, LoginData } from '../store/authStore';
+import { useGraphStore } from '../store/graphStore';
 import { 
   LogIn, 
   Eye, 
@@ -20,6 +21,7 @@ import {
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { login, setGuest, isLoading, error, clearError } = useAuthStore();
+  const { clearGraph } = useGraphStore();
   
   const [formData, setFormData] = useState<LoginData>({
     email_or_username: '',
@@ -74,6 +76,10 @@ const LoginPage: React.FC = () => {
 
     try {
       await login(formData);
+      
+      // Limpiar el grafo al iniciar sesión para empezar con una experiencia limpia
+      clearGraph();
+      
       navigate('/');
     } catch (error) {
       // Error is handled by the store

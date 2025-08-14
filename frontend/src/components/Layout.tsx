@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Menu, 
   X, 
@@ -22,6 +22,7 @@ import {
   LogIn
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
+import { useGraphStore } from '../store/graphStore';
 import clsx from 'clsx';
 
 interface LayoutProps {
@@ -40,7 +41,9 @@ export function Layout({ children }: LayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, isAuthenticated, logout, isGuest } = useAuthStore();
+  const { clearGraph } = useGraphStore();
 
   const navigationItems: NavigationItem[] = [
     {
@@ -74,6 +77,18 @@ export function Layout({ children }: LayoutProps) {
 
   const isCurrentPath = (path: string) => {
     return location.pathname === path;
+  };
+
+  // Manejar navegación a login desde modo invitado
+  const handleGoToLogin = () => {
+    clearGraph(); // Limpiar el grafo antes de ir al login
+    navigate('/login');
+  };
+
+  // Manejar logout limpiando el grafo
+  const handleLogout = () => {
+    clearGraph(); // Limpiar el grafo al hacer logout
+    logout();
   };
 
   // Close user menu when clicking outside
@@ -146,13 +161,13 @@ export function Layout({ children }: LayoutProps) {
               
               {/* Botón de login para usuarios invitados */}
               {isGuest && (
-                <Link
-                  to="/login"
+                <button
+                  onClick={handleGoToLogin}
                   className="flex items-center space-x-2 px-3 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-medium transition-colors"
                 >
                   <LogIn size={16} />
                   <span className="hidden sm:block">Iniciar Sesión</span>
-                </Link>
+                </button>
               )}
 
               {/* Menu de usuario */}
@@ -184,7 +199,7 @@ export function Layout({ children }: LayoutProps) {
                         <div className="p-1">
                           <button
                             onClick={() => {
-                              logout();
+                              handleLogout();
                               setIsUserMenuOpen(false);
                             }}
                             className="flex items-center space-x-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded transition-colors"
@@ -256,14 +271,16 @@ export function Layout({ children }: LayoutProps) {
               <div className="p-4 border-t border-gray-200">
                 {/* Botón de login para usuarios invitados en móvil */}
                 {isGuest && (
-                  <Link
-                    to="/login"
-                    onClick={() => setIsSidebarOpen(false)}
+                  <button
+                    onClick={() => {
+                      setIsSidebarOpen(false);
+                      handleGoToLogin();
+                    }}
                     className="flex items-center space-x-2 w-full px-3 py-2 mb-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-medium transition-colors justify-center"
                   >
                     <LogIn size={16} />
                     <span>Iniciar Sesión</span>
-                  </Link>
+                  </button>
                 )}
                 
                 {/* Solo mostrar info de usuario si está autenticado y no es invitado */}
@@ -282,7 +299,7 @@ export function Layout({ children }: LayoutProps) {
                     </div>
                     <button
                       onClick={() => {
-                        logout();
+                        handleLogout();
                         setIsSidebarOpen(false);
                       }}
                       className="flex items-center space-x-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -297,7 +314,7 @@ export function Layout({ children }: LayoutProps) {
                 {isGuest && (
                   <button
                     onClick={() => {
-                      logout();
+                      handleLogout();
                       setIsSidebarOpen(false);
                     }}
                     className="flex items-center space-x-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"

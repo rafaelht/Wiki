@@ -14,14 +14,12 @@
 
 import React from 'react';
 import { GraphNode } from '../types';
-import { ExternalLink, Globe, BookOpen, X, Expand } from 'lucide-react';
+import { ExternalLink, Globe, BookOpen, X } from 'lucide-react';
 
 interface ArticlePreviewProps {
   node: GraphNode | null;
   isVisible: boolean;
   onClose: () => void;
-  onExpand?: (nodeId: string, depth: number) => Promise<void>;
-  isExpanding?: boolean;
   className?: string;
 }
 
@@ -29,8 +27,6 @@ export const ArticlePreview: React.FC<ArticlePreviewProps> = ({
   node,
   isVisible,
   onClose,
-  onExpand,
-  isExpanding = false,
   className = ''
 }) => {
   if (!isVisible || !node) return null;
@@ -77,20 +73,6 @@ export const ArticlePreview: React.FC<ArticlePreviewProps> = ({
           </div>
           {/* Botones de acción */}
           <div className="flex items-center space-x-2">
-            {onExpand && (
-              <button
-                onClick={() => onExpand(node.id, 2)}
-                disabled={isExpanding}
-                className={`p-2 rounded-lg transition-colors ${
-                  isExpanding 
-                    ? 'text-gray-300 bg-gray-50 cursor-not-allowed' 
-                    : 'text-blue-500 hover:text-blue-700 hover:bg-blue-50'
-                }`}
-                title={isExpanding ? "Expandiendo..." : "Expandir nodo (profundidad 2)"}
-              >
-                <Expand className={`h-5 w-5 ${isExpanding ? 'animate-pulse' : ''}`} />
-              </button>
-            )}
             <button
               onClick={onClose}
               className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"

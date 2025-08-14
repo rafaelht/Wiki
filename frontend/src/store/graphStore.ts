@@ -94,7 +94,7 @@ export const useGraphStore = create<GraphStore>()(
       },
 
       // Exploración de grafos
-      exploreFromNode: async (articleTitle, depth = 1, maxNodes) => {
+      exploreFromNode: async (articleTitle, depth = 2, maxNodes) => {
         const { setLoading, setError, setCurrentGraph, addToHistory } = get();
         
         try {
@@ -174,8 +174,8 @@ export const useGraphStore = create<GraphStore>()(
             edge.from_node === nodeId || edge.to_node === nodeId
           ).length;
           
-          // Si ya tiene muchas conexiones, no expandir
-          if (nodeConnections >= 5) {
+          // Aumentar el límite para una experiencia más inmersiva
+          if (nodeConnections >= 8) {
             return false;
           }
           

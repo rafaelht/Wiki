@@ -38,7 +38,6 @@ export function ExplorerPage() {
     exploreFromNode,
     saveCurrentExploration,
     setCurrentGraph,
-    expandNode,
     expandNodeSilently,
     clearGraph
   } = useGraphStore();
@@ -104,7 +103,6 @@ export function ExplorerPage() {
     if (state?.loadedExploration) {
       const exploration = state.loadedExploration;
       setCurrentGraph(exploration.graph_data);
-      toast.success(`Exploración "${exploration.name}" cargada exitosamente`);
       
       // Limpiar el state para evitar recargas accidentales
       window.history.replaceState({}, document.title, location.pathname);
@@ -115,7 +113,7 @@ export function ExplorerPage() {
   const handleArticleSelect = async (article: WikipediaArticle) => {
     try {
       console.log('Exploring article:', article.title);
-      await exploreFromNode(article.title, 2, 30); // Optimizado: profundidad 2, máximo 30 nodos
+      await exploreFromNode(article.title, 3, 60); // Incrementado: profundidad 3, máximo 60 nodos para grafo más rico
       
     } catch (error) {
       console.error('Error explorando artículo:', error);
@@ -129,14 +127,16 @@ export function ExplorerPage() {
     setSelectedNode(node);
     setShowPreview(true);
     
-    // Expansión dinámica silenciosa: expandir el nodo en segundo plano
+    // Expansión dinámica inmersiva: expandir el nodo en segundo plano
     if (currentGraph && node.id && !expandingNodes.has(node.id)) {
       // Marcar temporalmente para evitar clicks múltiples
       setExpandingNodes(prev => new Set(prev).add(node.id));
       
-      // Expandir silenciosamente sin mostrar loading ni toasts
+      // Expandir silenciosamente con mayor profundidad para nodos principales
       try {
-        await expandNodeSilently(node.id, 1);
+        // Usar mayor profundidad para nodos centrales (depth 0-1), moderada para secundarios
+        const expansionDepth = node.depth === 0 ? 3 : node.depth <= 1 ? 2 : 1;
+        await expandNodeSilently(node.id, expansionDepth);
       } catch (error) {
         console.warn('Error en expansión silenciosa:', error);
       } finally {
@@ -147,34 +147,8 @@ export function ExplorerPage() {
             newSet.delete(node.id);
             return newSet;
           });
-        }, 1000);
+        }, 500); // Reducir el delay para una experiencia más fluida
       }
-    }
-  };
-
-  // Manejar expansión manual desde el panel de detalles
-  const handleManualExpand = async (nodeId: string, depth: number) => {
-    if (!currentGraph || expandingNodes.has(nodeId)) {
-      return;
-    }
-    
-    try {
-      // Marcar el nodo como expandiéndose
-      setExpandingNodes(prev => new Set(prev).add(nodeId));
-      
-      await expandNode(nodeId, depth);
-      
-      toast.success(`Nodo expandido con profundidad ${depth}`);
-    } catch (error) {
-      console.error('Error expandiendo nodo:', error);
-      // El error ya se maneja en el store con toast
-    } finally {
-      // Remover el nodo del estado de expansión
-      setExpandingNodes(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(nodeId);
-        return newSet;
-      });
     }
   };
 
@@ -473,8 +447,6 @@ export function ExplorerPage() {
                   node={selectedNode}
                   isVisible={showPreview}
                   onClose={handleClosePreview}
-                  onExpand={handleManualExpand}
-                  isExpanding={selectedNode ? expandingNodes.has(selectedNode.id) : false}
                   className="h-full"
                 />
               </div>

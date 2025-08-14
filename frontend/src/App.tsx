@@ -17,27 +17,12 @@ import RegisterPage from './pages/RegisterPage';
 import { useAuthStore } from './store/authStore';
 
 function App() {
-  const { isAuthenticated, isGuest, isInitializing, initializeAuth, forceLogout } = useAuthStore();
+  const { isAuthenticated, isGuest, isInitializing, initializeAuth } = useAuthStore();
 
   // Initialize auth state on app load
   useEffect(() => {
     initializeAuth();
   }, [initializeAuth]);
-
-  // Close session when app is closed
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      if (isAuthenticated || isGuest) {
-        forceLogout();
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, [isAuthenticated, isGuest, forceLogout]);
 
   // Show loading during initialization
   if (isInitializing) {
