@@ -583,7 +583,7 @@ export function ExplorerPage() {
             </div>
             
             <div className="text-center p-6 bg-purple-50 rounded-lg">
-              <div className="text-3xl mb-3">🎯</div>
+              <div className="text-3xl mb-3">💡</div>
               <h4 className="font-semibold text-gray-900 mb-2">3. Descubre</h4>
               <p className="text-sm text-gray-600">
                 Visualiza patrones y descubre relaciones inesperadas
@@ -620,19 +620,6 @@ export function ExplorerPage() {
                   {example}
                 </button>
               ))}
-            </div>
-          </div>
-
-          {/* Keyboard shortcuts section */}
-          <div className="mt-8 p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <h4 className="font-semibold text-gray-900 mb-3 text-center">⌨️ Atajos de Teclado</h4>
-            <div className="flex flex-wrap justify-center gap-4 text-sm">
-              <div className="flex items-center gap-2 bg-white px-3 py-2 rounded border">
-                <kbd className="px-2 py-1 bg-gray-100 rounded text-xs font-mono">Ctrl</kbd>
-                <span>+</span>
-                <kbd className="px-2 py-1 bg-gray-100 rounded text-xs font-mono">R</kbd>
-                <span className="text-gray-600">Limpiar grafo</span>
-              </div>
             </div>
           </div>
         </div>

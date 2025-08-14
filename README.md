@@ -1,8 +1,30 @@
-# Wikipedia Graph Explorer
+# Wikipedia Graph Expl**U**U```
 
-Un explorador de conocimiento que transforma artículos de Wikipedia en un grafo interactivo, mostrando las conexiones entre conceptos.
+**URL-**URLs después del inicio:**
+- **Aplicación**: http://localhost:3000
+- **API**: http://localhost:8001
+- **Docs API**: http://localhost:8001/docs
 
-## 🎯 ¿Qué hace esta aplicación?
+## Stack Tecnológicoicación**: http://localhost:3000
+- **API**: http://localhost:8001
+- **Docs API**: http://localhost:8001/docsespués del inicio:**
+- **Aplicación**: http://localhost:3000
+- **API**: http://localhost:8001
+- **Docs API**: http://localhost:8001/docs
+
+## Stack Tecnológicoués del inicio:**
+- **Aplicación**: http://localhost:3000
+- **API**: http://localhost:8001
+- **Docs API**: http://localhost:8001/docs
+
+## Stack Tecnológicospués del inicio:**
+- **Aplicación**: http://localhost:3000
+- **API**: http://localhost:8001
+- **Docs API**: http://localhost:8001/docs
+
+## Stack TecnológicoUn explorador de conocimiento que transforma artículos de Wikipedia en un grafo interactivo, mostrando las conexiones entre conceptos.
+
+## ¿Qué hace esta aplicación?
 
 - **Busca** cualquier artículo de Wikipedia
 - **Analiza** todos los enlaces internos del artículo
@@ -11,7 +33,7 @@ Un explorador de conocimiento que transforma artículos de Wikipedia en un grafo
 - **Persiste** la sesión entre recargas de página
 - **Limpia** el grafo para comenzar nuevas exploraciones
 
-## ⚡ Inicio Rápido
+## Inicio Rápido
 
 ```bash
 # Clonar y ejecutar con un comando
@@ -40,35 +62,35 @@ cd Wiki
 - **Tailwind CSS** - Estilado responsive
 - **JWT Authentication** - Sistema de autenticación
 
-## 🎮 Funcionalidades Implementadas
+## Funcionalidades Implementadas
 
-### ✅ Exploración de Grafos
+### Exploración de Grafos
 - Búsqueda inteligente de artículos de Wikipedia
 - Construcción automática de grafos de conocimiento
 - Visualización interactiva con física híbrida
 - Expansión dinámica haciendo clic en nodos
 - Posicionamiento estable de nodos
 
-### ✅ Gestión de Estado
+### Gestión de Estado
 - Persistencia de autenticación entre sesiones
 - Estado del grafo mantenido en recargas
 - Sistema de huéspedes para exploración sin registro
 - Eventos personalizados para sincronización
 
-### ✅ Interfaz de Usuario
+### Interfaz de Usuario
 - Modo invitado y autenticado
 - Pantalla de bienvenida con guías
 - Barra de búsqueda con autocompletado
 - Botón de limpiar grafo con confirmación
 - Atajos de teclado (`Ctrl+R` para limpiar)
 
-### ✅ Características Técnicas
+### Características Técnicas
 - Sistema híbrido de física para estabilidad
 - Manejo robusto de errores y timeouts
 - Redirección automática tras logout
 - Tooltips dinámicos con información contextual
 
-## 📁 Estructura del Proyecto
+## Estructura del Proyecto
 
 ```
 Wiki/
@@ -90,7 +112,121 @@ Wiki/
 └── README.md
 ```
 
-## 🔧 Comandos Útiles
+## Estructura de Base de Datos (MongoDB)
+
+### **Colección: `users`**
+```javascript
+{
+  "_id": ObjectId("..."),
+  "email": "usuario@ejemplo.com",
+  "username": "usuario123",
+  "full_name": "Nombre Completo",
+  "password_hash": "$2b$12$...", // Hash bcrypt
+  "is_active": true,
+  "role": "user", // "guest" | "user" | "admin"
+  "created_at": ISODate("2025-08-13T10:30:00Z"),
+  "updated_at": ISODate("2025-08-13T10:30:00Z")
+}
+
+// Índices:
+// - email (único)
+// - username (único) 
+// - role
+// - created_at
+```
+
+### **Colección: `explorations`**
+```javascript
+{
+  "_id": ObjectId("..."),
+  "user_id": "67abc123...", // Referencia a users._id
+  "name": "Exploración de Física Cuántica",
+  "description": "Conexiones entre conceptos de mecánica cuántica",
+  "root_node": "Quantum_mechanics",
+  "graph_data": {
+    "nodes": [
+      {
+        "id": "Quantum_mechanics",
+        "label": "Quantum mechanics",
+        "summary": "Fundamental theory in physics...",
+        "url": "https://en.wikipedia.org/wiki/Quantum_mechanics",
+        "page_id": 25402,
+        "depth": 0,
+        "centrality": 0.85,
+        "image_url": "https://upload.wikimedia.org/..."
+      },
+      {
+        "id": "Wave_function", 
+        "label": "Wave function",
+        "summary": "Mathematical description...",
+        "url": "https://en.wikipedia.org/wiki/Wave_function",
+        "page_id": 33104,
+        "depth": 1,
+        "centrality": 0.67
+      }
+    ],
+    "edges": [
+      {
+        "from": "Quantum_mechanics",
+        "to": "Wave_function", 
+        "weight": 1.0,
+        "edge_type": "link"
+      }
+    ],
+    "root_node": "Quantum_mechanics",
+    "total_nodes": 25,
+    "total_edges": 48,
+    "max_depth": 2
+  },
+  "tags": ["physics", "quantum", "science"],
+  "created_at": ISODate("2025-08-13T10:30:00Z"),
+  "updated_at": ISODate("2025-08-13T10:30:00Z")
+}
+
+// Índices:
+// - user_id
+// - name
+// - root_node  
+// - tags
+// - created_at
+// - {created_at: -1, name: 1} (compuesto para paginación)
+```
+
+### **Colección: `articles_cache`**
+```javascript
+{
+  "_id": ObjectId("..."),
+  "page_id": 25402, // ID único de Wikipedia
+  "title": "Quantum_mechanics",
+  "summary": "Fundamental theory in physics that provides...",
+  "url": "https://en.wikipedia.org/wiki/Quantum_mechanics",
+  "image_url": "https://upload.wikimedia.org/...",
+  "links": [
+    "Wave_function",
+    "Schrödinger_equation", 
+    "Heisenberg_uncertainty_principle"
+  ],
+  "cached_at": ISODate("2025-08-13T10:30:00Z"),
+  "expires_at": ISODate("2025-08-20T10:30:00Z"), // TTL de 7 días
+  "link_count": 156,
+  "language": "en"
+}
+
+// Índices:
+// - page_id (único)
+// - title (único)
+// - cached_at
+// - expires_at (TTL index)
+```
+
+### **Configuración de Base de Datos**
+- **Motor**: AsyncIOMotorClient para operaciones asíncronas
+- **Pool de Conexiones**: 10-50 conexiones concurrentes
+- **Timeouts**: 5s selección, 10s conexión, 20s operaciones
+- **TTL**: Caché de artículos expira en 7 días
+- **Índices Optimizados**: Para búsquedas frecuentes y paginación
+
+## Comandos Útiles
 
 ```bash
 # Desarrollo manual
@@ -104,7 +240,7 @@ tail -f backend/app.log
 rm -rf backend/__pycache__ frontend/node_modules/.cache
 ```
 
-## 🧠 Características Técnicas Destacadas
+## Características Técnicas Destacadas
 
 ### Algoritmos de Grafos
 - **BFS** para exploración por niveles
@@ -124,7 +260,7 @@ rm -rf backend/__pycache__ frontend/node_modules/.cache
 - **Manejo de errores**: Mensajes informativos y recuperación automática
 - **Accesibilidad**: Atajos de teclado y navegación clara
 
-## 🎯 Demostración del Proyecto
+## Demostración del Proyecto
 
 Este proyecto demuestra:
 

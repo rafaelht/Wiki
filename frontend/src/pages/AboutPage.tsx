@@ -19,26 +19,31 @@ import {
 export function AboutPage() {
   const technologies = {
     backend: [
-      { name: 'FastAPI', description: 'Framework web moderno y rápido para Python' },
-      { name: 'Motor', description: 'Driver asíncrono para MongoDB' },
-      { name: 'NetworkX', description: 'Biblioteca para análisis de grafos' },
-      { name: 'BeautifulSoup', description: 'Parsing de HTML y XML' },
-      { name: 'HTTPX', description: 'Cliente HTTP asíncrono' },
-      { name: 'Pydantic', description: 'Validación de datos con type hints' }
+      { name: 'FastAPI', description: 'Framework web moderno y rápido para Python (v0.104.1)' },
+      { name: 'Motor & PyMongo', description: 'Driver asíncrono oficial para MongoDB (v3.3.1)' },
+      { name: 'NetworkX', description: 'Biblioteca para análisis y algoritmos de grafos (v3.2.1)' },
+      { name: 'BeautifulSoup4', description: 'Parsing y extracción de datos HTML/XML (v4.12.2)' },
+      { name: 'HTTPX & AIOHTTP', description: 'Clientes HTTP asíncronos para Wikipedia API' },
+      { name: 'Pydantic', description: 'Validación de datos con type hints (v2.4.2)' },
+      { name: 'PyJWT & Passlib', description: 'Autenticación JWT y encriptación bcrypt' }
     ],
     frontend: [
-      { name: 'React', description: 'Biblioteca para interfaces de usuario' },
-      { name: 'TypeScript', description: 'Superset tipado de JavaScript' },
-      { name: 'Vite', description: 'Herramienta de build ultrarrápida' },
-      { name: 'Tailwind CSS', description: 'Framework CSS utility-first' },
-      { name: 'Zustand', description: 'Gestión de estado minimalista' },
-      { name: 'vis.js', description: 'Visualización de grafos y redes' }
+      { name: 'React', description: 'Biblioteca para interfaces de usuario (v18.2.0)' },
+      { name: 'TypeScript', description: 'Superset tipado de JavaScript (v5.2.2)' },
+      { name: 'Vite', description: 'Herramienta de build ultrarrápida (v4.5.0)' },
+      { name: 'Tailwind CSS', description: 'Framework CSS utility-first (v3.3.6)' },
+      { name: 'Zustand', description: 'Gestión de estado minimalista (v4.5.7)' },
+      { name: 'vis-network', description: 'Visualización interactiva de grafos (v9.1.6)' },
+      { name: 'React Router', description: 'Navegación y routing (v6.8.0)' },
+      { name: 'Axios', description: 'Cliente HTTP para API calls (v1.6.0)' },
+      { name: 'React Hot Toast', description: 'Notificaciones y feedback (v2.5.2)' },
+      { name: 'Lucide React', description: 'Iconografía moderna (v0.294.0)' }
     ],
     infrastructure: [
       { name: 'MongoDB', description: 'Base de datos NoSQL orientada a documentos' },
+      { name: 'Uvicorn', description: 'Servidor ASGI para aplicaciones Python (v0.24.0)' },
       { name: 'Docker', description: 'Contenedorización de aplicaciones' },
-      { name: 'Docker Compose', description: 'Orchestración de servicios' },
-      { name: 'GitHub Actions', description: 'CI/CD integrado' }
+      { name: 'Wikipedia API', description: 'Integración con APIs oficiales de Wikimedia' }
     ]
   };
 
@@ -144,7 +149,7 @@ export function AboutPage() {
           
           <div className="grid md:grid-cols-2 gap-6">
             <div className="bg-blue-50 rounded-lg p-6">
-              <h3 className="font-semibold text-gray-900 mb-3">🎯 Propósito Técnico</h3>
+              <h3 className="font-semibold text-gray-900 mb-3">Propósito Técnico</h3>
               <ul className="text-sm space-y-2">
                 <li>• Demostrar arquitectura full-stack moderna</li>
                 <li>• Implementar algoritmos de grafos</li>
@@ -154,7 +159,7 @@ export function AboutPage() {
             </div>
             
             <div className="bg-green-50 rounded-lg p-6">
-              <h3 className="font-semibold text-gray-900 mb-3">🌟 Valor Añadido</h3>
+              <h3 className="font-semibold text-gray-900 mb-3">Valor Añadido</h3>
               <ul className="text-sm space-y-2">
                 <li>• Exploración visual del conocimiento</li>
                 <li>• Descubrimiento de conexiones inesperadas</li>
