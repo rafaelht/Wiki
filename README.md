@@ -1,4 +1,4 @@
-# Wikipedia Graph Expl**U**U```
+# Wikipedia Graph Explorer
 
 **URLs:**
 - **Aplicación**: http://localhost:3000
@@ -166,11 +166,6 @@ Wiki/
 - **Timeouts**: 5s selección, 10s conexión, 20s operaciones
 - **TTL**: Caché de artículos expira en 7 días
 - **Índices Optimizados**: Para búsquedas frecuentes y paginación
-
-## Comandos Útiles
-
-```
-```
 
 ## Características Técnicas Destacadas
 
