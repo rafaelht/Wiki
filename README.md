@@ -1,4 +1,4 @@
-# Wikipedia Grap## Inicio Rápido
+# Wikipedia Grap
 
 ```bash
 # Clonar y ejecutar con un comando
