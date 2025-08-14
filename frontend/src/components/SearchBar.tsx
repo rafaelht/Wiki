@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Search, Loader2, AlertCircle } from 'lucide-react';
 import { useGraphStore } from '../store/graphStore';
 import { WikipediaArticle } from '../types';
@@ -11,11 +11,15 @@ interface SearchBarProps {
   disabled?: boolean;
 }
 
-const SearchBar: React.FC<SearchBarProps> = ({ 
+export interface SearchBarRef {
+  clearSearch: () => void;
+}
+
+const SearchBar = forwardRef<SearchBarRef, SearchBarProps>(({ 
   onArticleSelect, 
   placeholder = "Search Wikipedia articles...",
   disabled = false 
-}) => {
+}, ref) => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<WikipediaArticle[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -27,6 +31,16 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   
   const { exploreFromNode, clearGraph, isLoading: graphLoading } = useGraphStore();
+
+  // Exponer función para limpiar el search desde el componente padre
+  useImperativeHandle(ref, () => ({
+    clearSearch: () => {
+      setQuery('');
+      setResults([]);
+      setShowDropdown(false);
+      setError(null);
+    }
+  }), []);
 
   const searchWikipedia = useCallback(async (searchQuery: string) => {
     if (!searchQuery.trim() || searchQuery.trim().length < 2) {
@@ -167,6 +181,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
       )}
     </div>
   );
-};
+});
+
+SearchBar.displayName = 'SearchBar';
 
 export default SearchBar;

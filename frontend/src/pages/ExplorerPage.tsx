@@ -5,9 +5,9 @@
  * incluyendo búsqueda, visualización y panel de detalles.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import SearchBar from '../components/SearchBar';
+import SearchBar, { SearchBarRef } from '../components/SearchBar';
 import { GraphVisualization } from '../components/GraphVisualization';
 import { ArticlePreview } from '../components/ArticlePreview';
 import ErrorBoundary from '../components/ErrorBoundary';
@@ -15,7 +15,7 @@ import SaveExplorationModal from '../components/SaveExplorationModal';
 import { useGraphStore } from '../store/graphStore';
 import { useAuthStore } from '../store/authStore';
 import { WikipediaArticle, GraphNode, SavedExploration } from '../types';
-import { Save, Download, Share2, AlertCircle, Lock } from 'lucide-react';
+import { Save, Download, Share2, AlertCircle, Lock, RotateCcw } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export function ExplorerPage() {
@@ -23,6 +23,9 @@ export function ExplorerPage() {
   const [showPreview, setShowPreview] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [expandingNodes, setExpandingNodes] = useState<Set<string>>(new Set());
+  
+  // Ref para controlar el SearchBar
+  const searchBarRef = useRef<SearchBarRef>(null);
   
   const location = useLocation();
 
@@ -77,6 +80,23 @@ export function ExplorerPage() {
       window.removeEventListener('auth:guest', handleGuest);
     };
   }, [clearGraph]);
+
+  // Atajo de teclado para limpiar grafo (Ctrl+R o Cmd+R)
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Ctrl+R (Windows/Linux) o Cmd+R (Mac) para limpiar grafo
+      if ((event.ctrlKey || event.metaKey) && event.key === 'r' && currentGraph) {
+        event.preventDefault(); // Prevenir recarga de página
+        handleClearGraph();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [currentGraph]); // Dependencia de currentGraph para acceso actualizado
 
   // Cargar exploración guardada si se pasa por la navegación
   useEffect(() => {
@@ -220,6 +240,33 @@ export function ExplorerPage() {
     toast.success('Grafo exportado exitosamente');
   };
 
+  // Manejar limpieza del grafo
+  const handleClearGraph = () => {
+    // Confirmar si el grafo tiene contenido significativo
+    const hasSignificantContent = currentGraph && currentGraph.total_nodes > 1;
+    
+    if (hasSignificantContent) {
+      const confirmClear = window.confirm(
+        '¿Estás seguro de que quieres limpiar el grafo actual? Se perderá toda la exploración actual.'
+      );
+      
+      if (!confirmClear) {
+        return;
+      }
+    }
+    
+    clearGraph();
+    setSelectedNode(null);
+    setShowPreview(false);
+    
+    // Limpiar también el input del buscador
+    if (searchBarRef.current) {
+      searchBarRef.current.clearSearch();
+    }
+    
+    toast.success('Grafo limpiado. Busca un nuevo artículo para comenzar');
+  };
+
   // Manejar compartir grafo
   const handleShareGraph = async () => {
     try {
@@ -297,6 +344,16 @@ export function ExplorerPage() {
                 <Download size={16} />
                 <span>Exportar</span>
               </button>
+
+              <button
+                onClick={handleClearGraph}
+                className="px-4 py-2 border border-orange-300 text-orange-700 rounded-lg hover:bg-orange-50 flex items-center space-x-2 transition-colors"
+                disabled={isLoading}
+                title={`Limpiar el grafo actual (${currentGraph?.total_nodes || 0} nodos) y empezar de nuevo. Atajo: Ctrl+R`}
+              >
+                <RotateCcw size={16} />
+                <span>Limpiar</span>
+              </button>
               
               <button
                 onClick={handleShareGraph}
@@ -339,6 +396,7 @@ export function ExplorerPage() {
         )}
         
         <SearchBar
+          ref={searchBarRef}
           onArticleSelect={handleArticleSelect}
           placeholder="Buscar artículo de Wikipedia para comenzar la exploración..."
           disabled={isLoading}
@@ -562,6 +620,19 @@ export function ExplorerPage() {
                   {example}
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* Keyboard shortcuts section */}
+          <div className="mt-8 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <h4 className="font-semibold text-gray-900 mb-3 text-center">⌨️ Atajos de Teclado</h4>
+            <div className="flex flex-wrap justify-center gap-4 text-sm">
+              <div className="flex items-center gap-2 bg-white px-3 py-2 rounded border">
+                <kbd className="px-2 py-1 bg-gray-100 rounded text-xs font-mono">Ctrl</kbd>
+                <span>+</span>
+                <kbd className="px-2 py-1 bg-gray-100 rounded text-xs font-mono">R</kbd>
+                <span className="text-gray-600">Limpiar grafo</span>
+              </div>
             </div>
           </div>
         </div>

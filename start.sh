@@ -393,7 +393,7 @@ info "Presiona Ctrl+C para detener todos los servicios"
 echo ""
 
 # Mantener el script corriendo y mostrar logs
-log "📊 Monitoreando servicios... (logs en backend.log y frontend.log)"
+log "Monitoreando servicios... (logs en backend.log y frontend.log)"
 
 while true; do
     # Verificar que ambos procesos siguen corriendo

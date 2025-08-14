@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" fill="none">
+  <!-- Background with rounded corners for iOS -->
+  <rect width="180" height="180" rx="40" fill="#2563eb"/>
+  <rect x="5" y="5" width="170" height="170" rx="35" fill="none" stroke="#1d4ed8" stroke-width="4"/>
+  
+  <!-- Graph nodes (larger for visibility) -->
+  <circle cx="60" cy="60" r="8" fill="#fbbf24"/>
+  <circle cx="100" cy="45" r="8" fill="#10b981"/>
+  <circle cx="120" cy="80" r="8" fill="#f59e0b"/>
+  <circle cx="70" cy="100" r="8" fill="#8b5cf6"/>
+  <circle cx="110" cy="115" r="8" fill="#ef4444"/>
+  
+  <!-- Graph connections -->
+  <line x1="60" y1="60" x2="100" y2="45" stroke="#e5e7eb" stroke-width="3"/>
+  <line x1="100" y1="45" x2="120" y2="80" stroke="#e5e7eb" stroke-width="3"/>
+  <line x1="60" y1="60" x2="70" y2="100" stroke="#e5e7eb" stroke-width="3"/>
+  <line x1="120" y1="80" x2="110" y2="115" stroke="#e5e7eb" stroke-width="3"/>
+  <line x1="70" y1="100" x2="110" y2="115" stroke="#e5e7eb" stroke-width="3"/>
+  
+  <!-- Magnifying glass (larger) -->
+  <circle cx="110" cy="110" r="18" fill="none" stroke="#ffffff" stroke-width="6"/>
+  <line x1="123" y1="123" x2="140" y2="140" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
+  
+  <!-- Additional detail - small highlight on glass -->
+  <circle cx="105" cy="105" r="4" fill="#ffffff" opacity="0.3"/>
+</svg>
