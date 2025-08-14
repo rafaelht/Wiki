@@ -679,31 +679,7 @@ mongoexport --db=wikipedia_graph_explorer --collection=users --out=users.json
 mongoexport --db=wikipedia_graph_explorer --collection=explorations --query='{"user_id":"67abc123..."}' --out=user_explorations.json
 ```
 
-#### Configuración para Producción (MongoDB Atlas)
-
-1. **Crear Cluster en MongoDB Atlas**
-   - Ve a [MongoDB Atlas](https://cloud.mongodb.com/)
-   - Crea una cuenta o inicia sesión
-   - Crea un nuevo cluster (M0 es gratuito para desarrollo)
-   - Configura el acceso de red (IP Whitelist)
-   - Crea un usuario de base de datos
-
-2. **Configuración de Conexión**
-   ```bash
-   # Obtén tu connection string de Atlas
-   MONGODB_URL=mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/wikipedia_graph_explorer?retryWrites=true&w=majority
-   ```
-
-3. **Migrar Datos a Atlas**
-   ```bash
-   # Restaurar desde backup local
-   mongorestore --uri="tu_connection_string_de_atlas" --db=wikipedia_graph_explorer ./backup/wikipedia_graph_explorer/
-
-   # O usar MongoDB Compass para migración visual
-   # Descarga MongoDB Compass y conecta a ambas instancias para migrar
-   ```
-
-4. **Configuración de Índices en Atlas**
+**Configuración de Índices en Atlas**
    ```javascript
    // Ejecutar en MongoDB Compass o mongo shell conectado a Atlas
    use wikipedia_graph_explorer
