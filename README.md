@@ -803,39 +803,6 @@ db.explorations.aggregate([
 ])
 ```
 
-### Troubleshooting
-
-#### Problemas Comunes
-
-**Error de conexión**:
-```javascript
-// Verificar conectividad
-db.adminCommand("ismaster")
-
-// Verificar estado de la base de datos
-db.runCommand({ connectionStatus: 1 })
-```
-
-**Performance lenta**:
-```javascript
-// Analizar consultas lentas
-db.setProfilingLevel(2, { slowms: 100 })
-db.system.profile.find().sort({ ts: -1 }).limit(5)
-
-// Verificar índices faltantes
-db.explorations.find({ "user_id": "67abc123..." }).explain("executionStats")
-```
-
-**Espacio en disco**:
-```javascript
-// Verificar tamaño de colecciones
-db.users.stats()
-db.explorations.stats()
-
-// Compact database (solo en desarrollo)
-db.runCommand({ compact: "explorations" })
-```
-
 ## Características Técnicas Destacadas
 
 ### Algoritmos de Grafos
