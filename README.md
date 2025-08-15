@@ -18,7 +18,7 @@ Windows
 
 # Crear respaldo de la base de datos
 ./backup-database.sh
-```er
+
 
 URLs:
 - Aplicación: http://localhost:3000
