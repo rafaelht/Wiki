@@ -1,4 +1,4 @@
-# Wikipedia Grap
+# Wikipedia Graph Explorer
 
 ```bash
 # Clonar y ejecutar con un comando
