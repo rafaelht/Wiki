@@ -34,13 +34,6 @@ URLs:
 - Persiste la sesión entre recargas de página
 - Limpia el grafo para comenzar nuevas exploraciones
 
-## Inicio Rápido
-
-```bash
-# Clonar y ejecutar con un comando
-git clone <https://github.com/rafaelht/Wiki.git>
-cd Wiki
-./start.sh
 ```
 ## Stack Tecnológico
 
