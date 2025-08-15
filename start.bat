@@ -33,10 +33,10 @@ if errorlevel 1 (
 )
 
 REM Verificar Python
-python --version >nul 2>&1
+py -3.9 --version >nul 2>&1
 if errorlevel 1 (
-    echo ERROR: Python no esta instalado
-    echo Por favor instala Python desde https://python.org/
+    echo ERROR: Python 3.9 no esta instalado
+    echo Por favor instala Python 3.9 o superior desde https://python.org/
     pause
     exit /b 1
 )
@@ -46,8 +46,8 @@ cd backend
 
 REM Crear entorno virtual si no existe
 if not exist "venv" (
-    echo Creando entorno virtual...
-    python -m venv venv
+    echo Creando entorno virtual con Python 3.9...
+    py -3.9 -m venv venv
 )
 
 REM Activar entorno virtual e instalar dependencias
