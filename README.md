@@ -4,6 +4,9 @@
 # Clonar y ejecutar con un comando
 git clone <https://github.com/rafaelht/Wiki.git>
 cd Wiki
+Mac
+./start.sh
+Windows
 ./start.sh
 ```
 
@@ -17,19 +20,19 @@ cd Wiki
 ./backup-database.sh
 ```er
 
-**URLs:**
-- **Aplicación**: http://localhost:3000
-- **API**: http://localhost:8001
-- **Docs API**: http://localhost:8001/docs
+URLs:
+- Aplicación: http://localhost:3000
+- API: http://localhost:8001
+- Docs API: http://localhost:8001/docs
 
 ## ¿Qué hace esta aplicación?
 
-- **Busca** cualquier artículo de Wikipedia
-- **Analiza** todos los enlaces internos del artículo
-- **Construye** un grafo visual de conexiones
-- **Permite explorar** haciendo clic en nodos para expandir el conocimiento
-- **Persiste** la sesión entre recargas de página
-- **Limpia** el grafo para comenzar nuevas exploraciones
+- Busca cualquier artículo de Wikipedia
+- Analiza todos los enlaces internos del artículo
+- Construye un grafo visual de conexiones
+- Permite explorar haciendo clic en nodos para expandir el conocimiento
+- Persiste la sesión entre recargas de página
+- Limpia el grafo para comenzar nuevas exploraciones
 
 ## Inicio Rápido
 
