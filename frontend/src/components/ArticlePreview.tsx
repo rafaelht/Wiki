@@ -31,10 +31,6 @@ export const ArticlePreview: React.FC<ArticlePreviewProps> = ({
 }) => {
   if (!isVisible || !node) return null;
 
-  const formatPageId = (pageId: number) => {
-    return pageId.toLocaleString();
-  };
-
   const getNodeLevelColor = (depth: number) => {
     const colors = {
       0: 'bg-blue-100 text-blue-800 border-blue-200',
@@ -96,7 +92,7 @@ export const ArticlePreview: React.FC<ArticlePreviewProps> = ({
             {node.page_id && (
               <div className="flex items-center space-x-2 text-gray-600">
                 <BookOpen className="h-4 w-4" />
-                <span>ID: {formatPageId(node.page_id)}</span>
+                <span>ID: {node.page_id}</span>
               </div>
             )}
             <div className="flex items-center space-x-2 text-gray-600">
